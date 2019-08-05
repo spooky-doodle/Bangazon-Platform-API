@@ -36,14 +36,14 @@ namespace BangazonAPI.Controllers
         {
             using (SqlConnection conn = Connection)
             {
-                conn.Open();
+                await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "Write your SQL statement here to get all customers";
+                    cmd.CommandText = "SELECT c.FirstName, c.LastName, c.Id FROM Customer c";
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     List<Customer> customers = new List<Customer>();
-                    while (reader.Read())
+                    while (await reader.ReadAsync())
                     {
                         Customer customer = new Customer
                         {
@@ -164,10 +164,10 @@ namespace BangazonAPI.Controllers
         }
 
         // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-        }
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> Delete(int id)
+        //{
+        //}
 
         private bool CustomerExists(int id)
         {
