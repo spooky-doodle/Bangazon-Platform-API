@@ -63,6 +63,8 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(customers.Count > 0);
+                Assert.NotNull(customers[0].Products);
+
             }
         }
 
