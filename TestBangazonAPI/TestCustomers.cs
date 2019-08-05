@@ -12,6 +12,8 @@ namespace TestBangazonAPI
 {
     public class TestCustomers
     {
+        private Customer storedCustomer;
+
         [Fact]
         public async Task Test_Get_All_Customers()
         {
@@ -93,7 +95,7 @@ namespace TestBangazonAPI
 
                 string responseBody = await response.Content.ReadAsStringAsync();
                 var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
-
+                storedCustomer = customer;
                 /*
                     ASSERT
                 */
@@ -101,6 +103,60 @@ namespace TestBangazonAPI
                 Assert.True(customer.Id != 0);
                 Assert.Equal(customer.FirstName, newCustomer.FirstName);
                 Assert.Equal(customer.LastName, newCustomer.LastName);
+
+
+            }
+        }
+
+        [Fact]
+        public async Task Test_Update_Existing_Customer()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+
+                Customer testCustomer = new Customer()
+                {
+                    Id = storedCustomer.Id,
+                    FirstName = "Jason",
+                    LastName = "Server"
+                };
+
+                var jsonCustomer = JsonConvert.SerializeObject(testCustomer);
+
+                /*
+                    ACT
+                */
+                var response = await client.PutAsync(
+                    $"/api/customers/{storedCustomer.Id}",
+                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
+                    );
+
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+                /*   
+                 *   GET   
+                */
+
+                var getCustomer = await client.GetAsync($"/api/customers/{storedCustomer.Id}");
+                getCustomer.EnsureSuccessStatusCode();
+
+                string getResponse = await getCustomer.Content.ReadAsStringAsync();
+                Customer updatedCustomer = JsonConvert.DeserializeObject<Customer>(getResponse);
+
+                Assert.Equal(HttpStatusCode.OK, getCustomer.StatusCode);
+                Assert.Equal(storedCustomer.Id, updatedCustomer.Id);
+                Assert.Equal(customer.FirstName, updatedCustomer.FirstName);
+                Assert.Equal(customer.LastName, updatedCustomer.LastName);
 
 
             }
