@@ -40,6 +40,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = "SELECT c.Id, c.FirstName, c.LastName FROM Customer c";
+
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     List<Customer> customers = new List<Customer>();
@@ -207,6 +208,7 @@ namespace BangazonAPI.Controllers
                 }
             }
         }
+
 
         private async Task<bool> CustomerExists(int id)
         {
