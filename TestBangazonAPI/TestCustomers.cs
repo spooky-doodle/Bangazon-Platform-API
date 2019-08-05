@@ -12,7 +12,6 @@ namespace TestBangazonAPI
 {
     public class TestCustomers
     {
-
         [Fact]
         public async Task Test_Get_All_Customers()
         {
@@ -94,7 +93,7 @@ namespace TestBangazonAPI
 
                 string responseBody = await response.Content.ReadAsStringAsync();
                 var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
-  
+
                 /*
                     ASSERT
                 */
@@ -135,7 +134,7 @@ namespace TestBangazonAPI
                     );
 
 
-                
+
                 /*
                     ASSERT
                 */
@@ -171,8 +170,8 @@ namespace TestBangazonAPI
 
                 Customer testCustomer = new Customer()
                 {
-                    FirstName = "Jason",
-                    LastName = "Server"
+                    FirstName = "Billy",
+                    LastName = "Blanks"
                 };
 
                 var jsonCustomer = JsonConvert.SerializeObject(testCustomer);
@@ -181,7 +180,43 @@ namespace TestBangazonAPI
                     ACT
                 */
                 var response = await client.PutAsync(
-                    $"/api/customers/9999999",
+                    "/api/customers/9999999",
+                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
+                    );
+
+
+
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+
+            }
+        }
+
+        [Fact]
+        public async Task Test_Delete_Existing_Customer()
+        {
+
+
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+                Customer newCustomer = new Customer()
+                {
+                    FirstName = "Adam",
+                    LastName = "Driver"
+                };
+
+                var jsonCustomer = JsonConvert.SerializeObject(newCustomer);
+
+
+                var response = await client.PostAsync(
+                    "/api/customers",
                     new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
                     );
 
@@ -189,15 +224,53 @@ namespace TestBangazonAPI
                 string responseBody = await response.Content.ReadAsStringAsync();
                 var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
 
+
+                /*
+                    ACT
+                */
+                var deleteResponse = await client.DeleteAsync($"/api/customers/{customer.Id}");
+
+
                 /*
                     ASSERT
                 */
-                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+                Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+         
+
+
 
 
             }
         }
 
 
+        [Fact]
+        public async Task Test_Delete_Nonexisting_Customer()
+        {
+
+
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+              
+                /*
+                    ACT
+                */
+                var deleteResponse = await client.DeleteAsync($"/api/customers/135123233");
+
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+
+
+
+
+
+            }
+        }
     }
 }
