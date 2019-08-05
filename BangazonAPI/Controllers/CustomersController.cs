@@ -39,7 +39,7 @@ namespace BangazonAPI.Controllers
                 await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT c.Id, c.FirstName, c.LastName FROM Customer c";
+                    cmd.CommandText = "SELECT c.FirstName, c.LastName, c.Id FROM Customer c";
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     List<Customer> customers = new List<Customer>();
@@ -64,22 +64,20 @@ namespace BangazonAPI.Controllers
         }
 
         // GET api/values/5
-        [HttpGet("{id}", Name = "GetCustomer")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
             using (SqlConnection conn = Connection)
             {
-                await conn.OpenAsync();
+                conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT c.Id, c.FirstName, c.LastName FROM Customer c
-                    WHERE c.Id = @id                
-        ";
+                    cmd.CommandText = "Write your SQL statement here to get a single customer";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     Customer customer = null;
-                    if (await reader.ReadAsync())
+                    if (reader.Read())
                     {
                         customer = new Customer
                         {
@@ -108,45 +106,38 @@ namespace BangazonAPI.Controllers
                 {
                     // More string interpolation
                     cmd.CommandText = @"
-                        INSERT INTO Customer (FirstName, LastName)
+                        INSERT INTO Customer ()
                         OUTPUT INSERTED.Id
-                        VALUES (@firstName, @lastName)
+                        VALUES ()
                     ";
                     cmd.Parameters.Add(new SqlParameter("@firstName", customer.FirstName));
-                    cmd.Parameters.Add(new SqlParameter("@lastName", customer.LastName));
 
-
-                    customer.Id = (int)await cmd.ExecuteScalarAsync();
+                    customer.Id = (int) await cmd.ExecuteScalarAsync();
 
                     return CreatedAtRoute("GetCustomer", new { id = customer.Id }, customer);
                 }
             }
         }
 
-        // PUT api/customers/5
+        // PUT api/values/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(
-            [FromRoute] int id,
-            [FromBody] Customer customer
-            )
+        public async Task<IActionResult> Put(int id, [FromBody] Customer customer)
         {
             try
             {
                 using (SqlConnection conn = Connection)
                 {
-                    await conn.OpenAsync();
+                    conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
                             UPDATE Customer
-                            SET FirstName = @firstName,
-                                LastName = @lastName
+                            SET FirstName = @firstName
+                            -- Set the remaining columns here
                             WHERE Id = @id
                         ";
                         cmd.Parameters.Add(new SqlParameter("@id", customer.Id));
                         cmd.Parameters.Add(new SqlParameter("@firstName", customer.FirstName));
-                        cmd.Parameters.Add(new SqlParameter("@lastName", customer.LastName));
-
 
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
 
@@ -161,7 +152,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (await CustomerExists(id) == false)
+                if (!CustomerExists(id))
                 {
                     return NotFound();
                 }
@@ -173,46 +164,16 @@ namespace BangazonAPI.Controllers
         }
 
         // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> Delete(int id)
+        //{
+        //}
 
-                using (SqlConnection conn = Connection)
-                {
-                    await conn.OpenAsync();
-                    using (SqlCommand cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = "DELETE FROM Customer WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@id", id));
-                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
-                        if (rowsAffected > 0)
-                        {
-                            return new StatusCodeResult(StatusCodes.Status204NoContent);
-                        }
-                        throw new Exception("No rows affected");
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                if (await CustomerExists(id) == false)
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        private async Task<bool> CustomerExists(int id)
+        private bool CustomerExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
-                await conn.OpenAsync();
+                conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     // More string interpolation
@@ -221,7 +182,7 @@ namespace BangazonAPI.Controllers
 
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    return await reader.ReadAsync();
+                    return reader.Read();
                 }
             }
         }
