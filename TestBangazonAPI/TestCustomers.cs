@@ -94,6 +94,27 @@ namespace TestBangazonAPI
             }
         }
         [Fact]
+        public async Task Test_Get_One_Customer_Nonexistant()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+
+
+                /*
+                    ACT
+                */
+                var response = await client.GetAsync("/api/customers/99999999");
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            }
+        }
+        [Fact]
         public async Task Test_Create_New_Customer()
         {
             using (var client = new APIClientProvider().Client)
