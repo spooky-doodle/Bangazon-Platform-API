@@ -69,15 +69,17 @@ namespace BangazonAPI.Controllers
         {
             using (SqlConnection conn = Connection)
             {
-                conn.Open();
+                await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "Write your SQL statement here to get a single customer";
+                    cmd.CommandText = @"SELECT c.Id, c.FirstName, c.LastName FROM Customer c
+                    WHERE c.Id = @id                
+        ";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     Customer customer = null;
-                    if (reader.Read())
+                    if (await reader.ReadAsync())
                     {
                         customer = new Customer
                         {
