@@ -116,7 +116,7 @@ namespace BangazonAPI.Controllers
                     cmd.Parameters.Add(new SqlParameter("@lastName", customer.LastName));
 
 
-                    customer.Id = (int) await cmd.ExecuteScalarAsync();
+                    customer.Id = (int)await cmd.ExecuteScalarAsync();
 
                     return CreatedAtRoute("GetCustomer", new { id = customer.Id }, customer);
                 }
@@ -126,7 +126,7 @@ namespace BangazonAPI.Controllers
         // PUT api/customers/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(
-            [FromRoute] int id, 
+            [FromRoute] int id,
             [FromBody] Customer customer
             )
         {
@@ -161,7 +161,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!CustomerExists(id))
+                if (await CustomerExists(id) == false)
                 {
                     return NotFound();
                 }
@@ -173,16 +173,46 @@ namespace BangazonAPI.Controllers
         }
 
         // DELETE api/values/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> Delete(int id)
-        //{
-        //}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
 
-        private bool CustomerExists(int id)
+                using (SqlConnection conn = Connection)
+                {
+                    await conn.OpenAsync();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "DELETE FROM Customer WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (await CustomerExists(id) == false)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private async Task<bool> CustomerExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
-                conn.Open();
+                await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     // More string interpolation
@@ -191,7 +221,7 @@ namespace BangazonAPI.Controllers
 
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    return reader.Read();
+                    return await reader.ReadAsync();
                 }
             }
         }
