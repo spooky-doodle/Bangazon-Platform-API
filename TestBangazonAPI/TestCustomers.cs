@@ -40,6 +40,33 @@ namespace TestBangazonAPI
         }
 
         [Fact]
+        public async Task Test_Get_All_Customers_Include_Products()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+
+
+                /*
+                    ACT
+                */
+                var response = await client.GetAsync("/api/customers?_include=products");
+
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var customers = JsonConvert.DeserializeObject<List<Customer>>(responseBody);
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.True(customers.Count > 0);
+            }
+        }
+
+        [Fact]
         public async Task Test_Get_One_Customer()
         {
             using (var client = new APIClientProvider().Client)
@@ -196,81 +223,82 @@ namespace TestBangazonAPI
             }
         }
 
-        [Fact]
-        public async Task Test_Delete_Existing_Customer()
-        {
+        //[Fact]
+        //public async Task Test_Delete_Existing_Customer()
+        //{
 
 
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE
-                */
-                Customer newCustomer = new Customer()
-                {
-                    FirstName = "Adam",
-                    LastName = "Driver"
-                };
+        //    using (var client = new APIClientProvider().Client)
+        //    {
+        //        /*
+        //            ARRANGE
+        //        */
+        //        Customer newCustomer = new Customer()
+        //        {
+        //            FirstName = "Adam",
+        //            LastName = "Driver"
+        //        };
 
-                var jsonCustomer = JsonConvert.SerializeObject(newCustomer);
-
-
-                var response = await client.PostAsync(
-                    "/api/customers",
-                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
-                    );
+        //        var jsonCustomer = JsonConvert.SerializeObject(newCustomer);
 
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+        //        var response = await client.PostAsync(
+        //            "/api/customers",
+        //            new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
+        //            );
 
 
-                /*
-                    ACT
-                */
-                var deleteResponse = await client.DeleteAsync($"/api/customers/{customer.Id}");
+        //        string responseBody = await response.Content.ReadAsStringAsync();
+        //        var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
 
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        //        /*
+        //            ACT
+        //        */
+        //        var deleteResponse = await client.DeleteAsync($"/api/customers/{customer.Id}");
+
+
+        //        /*
+        //            ASSERT
+        //        */
+        //        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
          
 
 
 
 
-            }
-        }
+        //    }
+        //}
 
 
-        [Fact]
-        public async Task Test_Delete_Nonexisting_Customer()
-        {
+        //[Fact]
+        //public async Task Test_Delete_Nonexisting_Customer()
+        //{
 
 
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE
-                */
+        //    using (var client = new APIClientProvider().Client)
+        //    {
+        //        /*
+        //            ARRANGE
+        //        */
               
-                /*
-                    ACT
-                */
-                var deleteResponse = await client.DeleteAsync($"/api/customers/135123233");
+        //        /*
+        //            ACT
+        //        */
+        //        var deleteResponse = await client.DeleteAsync($"/api/customers/135123233");
 
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+        //        /*
+        //            ASSERT
+        //        */
+        //        Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
 
 
 
 
 
-            }
-        }
+        //    }
+        //}
+
     }
 }
