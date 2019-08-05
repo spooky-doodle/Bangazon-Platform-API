@@ -59,11 +59,40 @@ namespace BangazonAPI.Controllers
         }
 
         // GET: api/PaymentTypes/5
-        //[HttpGet("{id}", Name = "Get")]
+        [HttpGet("{id}", Name = "GetPaymentType")]
         //public string Get(int id)
-        //{
-        //    return "value";
-        //}
+        public async Task<IActionResult> GetSpecificPaymentTypes(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT p.Id, p.Name, p.AcctNumber, p.CustomerId 
+                                        FROM PaymentType p
+                                        WHERE p.Id = @id
+                                      ";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+
+                    PaymentType paymentType = null;
+                    if(await reader.ReadAsync())
+                    {
+                        paymentType = new PaymentType
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId"))
+                        };
+                    }
+
+                    reader.Close();
+                    return Ok(paymentType);
+                }
+            }
+        }
 
         // POST: api/PaymentTypes
         //[HttpPost]
