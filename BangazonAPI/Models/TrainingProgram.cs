@@ -6,14 +6,19 @@ using System.Threading.Tasks;
 
 namespace BangazonAPI.Models
 {
-    public class ProductType
+    public class TrainingProgram
     {
         public int Id { get; set; }
-<<<<<<< HEAD
-
-=======
->>>>>>> master
         [Required]
         public string Name { get; set; }
+        [Required]
+        public DateTime StartDate { get; set; }
+        [Required]
+        public DateTime EndDate { get; set; }
+        [Required]
+        public int MaxAttendees { get; set; }
+
+        public List<Employee> Attendees { get; set; }
+
     }
 }

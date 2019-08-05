@@ -6,14 +6,16 @@ using System.Threading.Tasks;
 
 namespace BangazonAPI.Models
 {
-    public class ProductType
+    public class Computer
     {
         public int Id { get; set; }
-<<<<<<< HEAD
-
-=======
->>>>>>> master
+        public DateTime PurchaseDate { get; set; }
+        public DateTime DecommissionDate { get; set; }
         [Required]
-        public string Name { get; set; }
+
+        public string Make { get; set; }
+        [Required]
+
+        public string Manufacturer { get; set; }
     }
 }
