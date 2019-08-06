@@ -149,5 +149,37 @@ namespace TestBangazonAPI
                 Assert.Equal(testPaymentType.AcctNumber, updatedPaymentType.AcctNumber);
             }
         }
+
+        [Fact]
+        public async Task Delete_PaymentType()
+        {
+            using(var client = new APIClientProvider().Client)
+            {
+                var newPaymentType = new PaymentType()
+                {
+                    Name = "UBS",
+                    AcctNumber = 98765,
+                    CustomerId = 1
+                };
+                var jsonNewPaymentType = JsonConvert.SerializeObject(newPaymentType);
+
+                var response = await client.PostAsync("/api/PaymentTypes",
+                    new StringContent(jsonNewPaymentType,
+                    Encoding.UTF8, "application/json"));
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var paymentType = JsonConvert.DeserializeObject<PaymentType>(responseBody);
+
+
+
+                /*
+                 * ACT
+                 */
+                var deleteResponse = await client.DeleteAsync($"/api/PaymentTypes/{paymentType.Id}");
+
+                Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+            }
+        }
     }
 }
