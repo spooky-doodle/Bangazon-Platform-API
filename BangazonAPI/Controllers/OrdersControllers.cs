@@ -34,7 +34,7 @@ namespace BangazonAPI.Controllers
 
         // GET: api/<controller>
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] string _include)
+        public async Task<IActionResult> Get([FromQuery] string _include, string completed)
 
         {
             using (SqlConnection conn = Connection)
@@ -47,13 +47,27 @@ namespace BangazonAPI.Controllers
                                         FROM [Order] o
                                         LEFT JOIN OrderProduct op ON op.OrderId = o.Id
                                         LEFT JOIN Product p ON p.Id = op.ProductId";
-                } else if (_include == "customers")
+                }
+                else if (_include == "customers")
                 {
                     sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, 
                                         c.Id AS CId, c.FirstName, c.LastName
                                         FROM [Order] o
                                         LEFT JOIN Customer c ON c.Id = o.CustomerId";
-                } else
+                }
+                else if (completed == "true")
+                {
+                    sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
+                    FROM[Order]
+                    WHERE PaymentTypeId != 0";
+                }
+                else if (completed == "false")
+                {
+                    sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
+                    FROM[Order]
+                    WHERE PaymentTypeId IS NULL";
+                }
+                else
                 {
                     sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
                                          FROM [Order]";
@@ -72,20 +86,20 @@ namespace BangazonAPI.Controllers
                     while (reader.Read())
                     {
 
-                            Order order = new Order
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            };
-                            try
-                            {
-                                order.PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"));
+                        Order order = new Order
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                        };
+                        try
+                        {
+                            order.PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"));
 
-                            }
-                            catch (SqlNullValueException)
-                            {
-                                // Don't do anything
-                            }
+                        }
+                        catch (SqlNullValueException)
+                        {
+                            // Don't do anything
+                        }
 
                         if (_include == "products")
                         {
@@ -112,7 +126,8 @@ namespace BangazonAPI.Controllers
                                 order.Products.Add(product);
                                 orders.Add(order);
                             }
-                        } else if (_include == "customers")
+                        }
+                        else if (_include == "customers")
                         {
                             Customer customer = new Customer
                             {
@@ -123,11 +138,12 @@ namespace BangazonAPI.Controllers
 
                             order.Customer = customer;
                             orders.Add(order);
-                        } else
+                        } 
+                        else
                         {
                             orders.Add(order);
                         }
-                       
+
                     }
 
                     reader.Close();
