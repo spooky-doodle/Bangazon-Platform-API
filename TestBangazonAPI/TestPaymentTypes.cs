@@ -109,10 +109,11 @@ namespace TestBangazonAPI
                 /*
                  * ARRANGE
                  */
+                var testNum = 1;
 
                 PaymentType testPaymentType = new PaymentType()
                 {
-                    Id = 5,
+                    Id = testNum,
                     Name = "CitiBank",
                     AcctNumber = 12346,
                     CustomerId = 2
@@ -124,7 +125,7 @@ namespace TestBangazonAPI
                     ACT
                 */
                 var response = await client.PutAsync(
-                    "/api/PaymentTypes/5",
+                    $"/api/PaymentTypes/{testNum}",
                     new StringContent(jsonTestPaymentType, Encoding.UTF8, "application/json")
                     );
 
@@ -137,14 +138,14 @@ namespace TestBangazonAPI
                  *   GET   
                 */
 
-                var getPaymentType = await client.GetAsync($"/api/PaymentTypes/5");
+                var getPaymentType = await client.GetAsync($"/api/PaymentTypes/{testNum}");
                 getPaymentType.EnsureSuccessStatusCode();
 
                 string getResponse = await getPaymentType.Content.ReadAsStringAsync();
                 PaymentType updatedPaymentType = JsonConvert.DeserializeObject<PaymentType>(getResponse);
 
                 Assert.Equal(HttpStatusCode.OK, getPaymentType.StatusCode);
-                Assert.Equal(5, updatedPaymentType.Id);
+                Assert.Equal(testNum, updatedPaymentType.Id);
                 Assert.Equal(testPaymentType.Name, updatedPaymentType.Name);
                 Assert.Equal(testPaymentType.AcctNumber, updatedPaymentType.AcctNumber);
             }
