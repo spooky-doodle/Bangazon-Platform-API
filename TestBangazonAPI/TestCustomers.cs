@@ -94,7 +94,7 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(customers.Count > 0);
-                Assert.NotNull(customers[1].PaymentType);
+                Assert.NotNull(customers[1].PaymentTypes[0]);
 
             }
         }
@@ -124,6 +124,65 @@ namespace TestBangazonAPI
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(customer.FirstName != null);
                 Assert.True(customer.Id == 1);
+            }
+        }
+
+        [Fact]
+        public async Task Test_Get_One_Customer_Include_Products()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+
+
+                /*
+                    ACT
+                */
+                var response = await client.GetAsync("/api/customers/2?_include=products");
+
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.True(customer.FirstName != null);
+                Assert.True(customer.Id == 1);
+                Assert.True(customer.Products.Count > 0);
+            }
+        }
+
+
+        [Fact]
+        public async Task Test_Get_One_Customer_Include_Payments()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+
+
+                /*
+                    ACT
+                */
+                var response = await client.GetAsync("/api/customers/2?_include=payments");
+
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.True(customer.FirstName != null);
+                Assert.True(customer.Id == 1);
+                Assert.True(customer.PaymentTypes.Count > 0);
             }
         }
         [Fact]
