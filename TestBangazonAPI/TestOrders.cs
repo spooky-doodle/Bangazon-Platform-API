@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
@@ -67,6 +68,55 @@ namespace TestBangazonAPI
                 Assert.NotNull(order);
 
 
+            }
+        }
+
+        [Fact]
+        public async Task Test_Create_And_Delete_Order()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+                Order order = new Order
+                {
+                    CustomerId = 2,
+                    PaymentTypeId = 2
+                };
+
+                var OrderAsJSON = JsonConvert.SerializeObject(order);
+
+
+                /*
+                    ACT
+                */
+
+                var response = await client.PostAsync(
+                    "/api/orders",
+                    new StringContent(OrderAsJSON, Encoding.UTF8, "application/json")
+                );
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var NewOrder = JsonConvert.DeserializeObject<Order>(responseBody);
+
+                /*
+                    ASSERT
+                */
+
+                Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+                Assert.Equal(order.CustomerId, NewOrder.CustomerId);
+                Assert.Equal(order.PaymentTypeId, NewOrder.PaymentTypeId);
+
+                /*
+                    ACT
+                */
+                var deleteResponse = await client.DeleteAsync($"/api/productTypes/{NewLaser.Id}");
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
             }
         }
     }
