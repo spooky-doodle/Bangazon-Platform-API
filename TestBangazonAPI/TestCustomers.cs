@@ -50,26 +50,41 @@ namespace TestBangazonAPI
                 LastName = "Apple"
             };
 
-            var postResponse = await PostCustomer(newCustomer);
+            Customer customerNotMatchingQuery = new Customer()
+            {
+                FirstName = "Kevin",
+                LastName = "Bacon"
+            };
 
+            var postResponse = await PostCustomer(newCustomer);
             Customer createdCustomer = await ParseOneCustomer(postResponse);
+
+
+            var notMatchingResponse = await PostCustomer(customerNotMatchingQuery);
+            Customer createdNotMatchingCustomer = await ParseOneCustomer(notMatchingResponse);
+
 
 
             /* Act */
             var queryResult = await GetResponse("/api/customers?q=Apple");
-
-
             var queriedCustomers = await ParseCustomerList(queryResult);
 
+
+
+            var foundCustomer = queriedCustomers.Find(cust => cust.Id == createdCustomer.Id);
+            var notFoundCustomer = queriedCustomers.Find(cust => cust.Id == createdNotMatchingCustomer.Id);
 
             /* Assert */
 
 
             Assert.Equal(HttpStatusCode.Created, postResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, notMatchingResponse.StatusCode);
+
             Assert.Equal(HttpStatusCode.OK, queryResult.StatusCode);
 
 
-            Assert.Contains<Customer>(createdCustomer, queriedCustomers);
+            Assert.NotNull(foundCustomer);
+            Assert.Null(notFoundCustomer);
 
 
 
