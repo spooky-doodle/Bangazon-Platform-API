@@ -70,7 +70,9 @@ namespace BangazonAPI.Controllers
                         }
                         else if (_include == "payments")
                         {
-                            customer.PaymentType = CreatePaymentType(reader);
+                            if (foundIndex == -1) customer.PaymentTypes = new List<PaymentType>();
+                            var newPayment = CreatePaymentType(reader);
+                            if (newPayment != null) customer.PaymentTypes.Add(newPayment);
 
                         }
 
