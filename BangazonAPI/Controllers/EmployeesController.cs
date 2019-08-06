@@ -94,8 +94,8 @@ namespace BangazonAPI.Controllers
                             };
                             employee.Department = department;
                         }
-                        
-                        catch(SqlNullValueException)
+
+                        catch (SqlNullValueException)
                         {
                             // nada
                         };
@@ -111,7 +111,7 @@ namespace BangazonAPI.Controllers
                             };
                             try
                             {
-                               computer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
+                                computer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
                             }
                             catch (IndexOutOfRangeException)
                             {
@@ -231,9 +231,32 @@ namespace BangazonAPI.Controllers
 
         // POST api/<controller>
         [HttpPost]
-        public void Post([FromBody]string value)
+        public async Task<IActionResult> Post([FromBody] Employee employee)
         {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    // More string interpolation
+                    cmd.CommandText = @"
+                        INSERT INTO Employee (FirstName, LastName, DepartmentId, IsSupervisor)
+                        OUTPUT INSERTED.Id
+                        VALUES (@firstName, @lastName, @departmentId, @isSupervisor)
+                    ";
+                    cmd.Parameters.Add(new SqlParameter("@firstName", employee.FirstName));
+                    cmd.Parameters.Add(new SqlParameter("@lastName", employee.LastName));
+                    cmd.Parameters.Add(new SqlParameter("@departmentId", employee.DepartmentId));
+                    cmd.Parameters.Add(new SqlParameter("@isSupervisor", employee.IsSupervisor));
+                    
+
+                    employee.Id = (int)await cmd.ExecuteScalarAsync();
+
+                    return CreatedAtRoute("GetEmployee", new { id = employee.Id }, employee);
+                }
+            }
         }
+
 
         // PUT api/<controller>/5
         [HttpPut("{id}")]
@@ -241,10 +264,6 @@ namespace BangazonAPI.Controllers
         {
         }
 
-        // DELETE api/<controller>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+
     }
 }
