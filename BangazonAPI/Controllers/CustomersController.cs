@@ -94,29 +94,42 @@ namespace BangazonAPI.Controllers
             [FromQuery] string _include = ""
             )
         {
-            if (_include != "products" || _include != "payments") _include = "";
+            _include = CheckInclude(_include);
             using (SqlConnection conn = Connection)
             {
                 await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT c.Id, c.FirstName, c.LastName FROM Customer c
-                    WHERE c.Id = @id                
-                    ";
+                    cmd.CommandText = MakeSqlGetCommand(_include);
+                    cmd.CommandText += " WHERE c.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                    Customer customer = null;
-                    if (await reader.ReadAsync())
+                    Customer cust = null;
+                    while (await reader.ReadAsync())
                     {
-                        customer = CreateCustomer(reader);
-                    }
+                        int Id = reader.GetInt32(reader.GetOrdinal("Id"));
+                        if (cust == null) cust = CreateCustomer(reader);
+                        if (_include == "products")
+                        {
+                            if (cust.Products == null) cust.Products = new List<Product>();
+                            var newProduct = CreateProduct(reader);
+                            if (newProduct != null) cust.Products.Add(newProduct);
+                        }
+                        else if (_include == "payments")
+                        {
+                            if (cust.PaymentTypes == null) cust.PaymentTypes = new List<PaymentType>();
+                            var newPayment = CreatePaymentType(reader);
+                            if (newPayment != null) cust.PaymentTypes.Add(newPayment);
 
+                        }
+
+                    }
                     reader.Close();
 
-                    if (customer == null) return NotFound();
+                    if (cust == null) return NotFound();
 
-                    return Ok(customer);
+                    return Ok(cust);
                 }
             }
         }
