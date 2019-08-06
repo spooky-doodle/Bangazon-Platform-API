@@ -79,19 +79,19 @@ namespace TestBangazonAPI
                     Title = "Test Product",
                     ProductTypeId = 1,
                     CustomerId = 1,
-                    Price = 21.25,
+                    Price = (decimal)21.25,
                     Description = "Test Description",
                     Quantity = 1
                 };
 
-                var jsonCustomer = JsonConvert.SerializeObject(newProduct);
+                var jsonProduct = JsonConvert.SerializeObject(newProduct);
 
                 /*
                     ACT
                 */
                 var response = await client.PostAsync(
                     "/api/products",
-                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
+                    new StringContent(jsonProduct, Encoding.UTF8, "application/json")
                     );
 
 
@@ -113,7 +113,7 @@ namespace TestBangazonAPI
         [Fact]
         public async Task Test_Update_Existing_Product()
         {
-            int testId = 2;
+            int testId = 1;
             using (var client = new APIClientProvider().Client)
             {
                 /*
@@ -122,11 +122,10 @@ namespace TestBangazonAPI
 
                 Product testProduct = new Product()
                 {
-                    Id = testId,
                     Title = "Test Product",
                     ProductTypeId = 1,
                     CustomerId = 1,
-                    Price = 21.25,
+                    Price = (decimal)21.25,
                     Description = "Test Description",
                     Quantity = 1
                 };
@@ -137,7 +136,7 @@ namespace TestBangazonAPI
                     ACT
                 */
                 var response = await client.PutAsync(
-                    $"/api/product/{testId}",
+                    $"/api/products/{testId}",
                     new StringContent(jsonProduct, Encoding.UTF8, "application/json")
                     );
 
@@ -152,7 +151,7 @@ namespace TestBangazonAPI
                  *   GET   
                 */
 
-                var getProduct = await client.GetAsync($"/api/product/{testId}");
+                var getProduct = await client.GetAsync($"/api/products/{testId}");
                 getProduct.EnsureSuccessStatusCode();
 
                 string getResponse = await getProduct.Content.ReadAsStringAsync();
@@ -181,7 +180,7 @@ namespace TestBangazonAPI
                     Title = "Test Product 2",
                     ProductTypeId = 6,
                     CustomerId = 6,
-                    Price = 21.25,
+                    Price = (decimal)21.25,
                     Description = "Test Description 2",
                     Quantity = 1
                 };
@@ -223,7 +222,7 @@ namespace TestBangazonAPI
                     Title = "Test Product",
                     ProductTypeId = 1,
                     CustomerId = 1,
-                    Price = 21.25,
+                    Price = (decimal)21.25,
                     Description = "Test Description",
                     Quantity = 1
                 };
