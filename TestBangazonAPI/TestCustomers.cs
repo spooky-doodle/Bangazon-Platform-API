@@ -336,6 +336,34 @@ namespace TestBangazonAPI
             }
         }
 
+        [Fact]
+        public async Task Test_Delete_Customer_Should_Fail()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE
+                */
+
+                
+
+                /*
+                    ACT
+                */
+                var response = await client.DeleteAsync("/api/customers/1");
+
+
+
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+
+            }
+        }
+
         //[Fact]
         //public async Task Test_Delete_Existing_Customer()
         //{
@@ -375,7 +403,7 @@ namespace TestBangazonAPI
         //            ASSERT
         //        */
         //        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
-         
+
 
 
 
@@ -394,7 +422,7 @@ namespace TestBangazonAPI
         //        /*
         //            ARRANGE
         //        */
-              
+
         //        /*
         //            ACT
         //        */
