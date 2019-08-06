@@ -66,7 +66,7 @@ namespace BangazonAPI.Controllers
 
         // GET api/<controller>/5
         [HttpGet("{id}", Name = "GetProductType")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
             {

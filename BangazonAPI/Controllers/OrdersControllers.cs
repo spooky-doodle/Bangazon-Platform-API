@@ -5,6 +5,7 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonAPI.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
@@ -37,43 +38,43 @@ namespace BangazonAPI.Controllers
         public async Task<IActionResult> Get([FromQuery] string _include, string completed)
 
         {
-            using (SqlConnection conn = Connection)
-            {
-                string sqlCommandTxt;
+            string sqlCommandTxt;
 
-                if (_include == "products")
-                {
-                    sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
+            if (_include == "products")
+            {
+                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
                                         FROM [Order] o
                                         LEFT JOIN OrderProduct op ON op.OrderId = o.Id
                                         LEFT JOIN Product p ON p.Id = op.ProductId";
-                }
-                else if (_include == "customers")
-                {
-                    sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, 
+            }
+            else if (_include == "customers")
+            {
+                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, 
                                         c.Id AS CId, c.FirstName, c.LastName
                                         FROM [Order] o
                                         LEFT JOIN Customer c ON c.Id = o.CustomerId";
-                }
-                else if (completed == "true")
-                {
-                    sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
+            }
+            else if (completed == "true")
+            {
+                sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
                     FROM[Order]
                     WHERE PaymentTypeId != 0";
-                }
-                else if (completed == "false")
-                {
-                    sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
+            }
+            else if (completed == "false")
+            {
+                sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
                     FROM[Order]
                     WHERE PaymentTypeId IS NULL";
-                }
-                else
-                {
-                    sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
+            }
+            else
+            {
+                sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
                                          FROM [Order]";
-                }
+            }
 
 
+            using (SqlConnection conn = Connection)
+            {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
@@ -138,7 +139,7 @@ namespace BangazonAPI.Controllers
 
                             order.Customer = customer;
                             orders.Add(order);
-                        } 
+                        }
                         else
                         {
                             orders.Add(order);
@@ -154,10 +155,124 @@ namespace BangazonAPI.Controllers
         }
 
         // GET api/<controller>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{id}", Name = "GetOrder")]
+        public async Task<IActionResult> Get([FromRoute] int id, [FromQuery] string _include, string completed)
+
         {
-            return "value";
+            string sqlCommandTxt;
+
+            if (!OrderExists(id))
+            {
+                return new StatusCodeResult(StatusCodes.Status404NotFound);
+            }
+
+            if (_include == "products")
+            {
+                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
+                                        FROM [Order] o
+                                        LEFT JOIN OrderProduct op ON op.OrderId = o.Id
+                                        LEFT JOIN Product p ON p.Id = op.ProductId";
+            }
+            else if (_include == "customers")
+            {
+                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, 
+                                        c.Id AS CId, c.FirstName, c.LastName
+                                        FROM [Order] o
+                                        LEFT JOIN Customer c ON c.Id = o.CustomerId";
+            }
+            else if (completed == "true")
+            {
+                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId
+                    FROM[Order] o
+                    WHERE PaymentTypeId != 0";
+            }
+            else if (completed == "false")
+            {
+                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId
+                    FROM[Order] o
+                    WHERE PaymentTypeId IS NULL";
+            }
+            else
+            {
+                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId
+                                         FROM [Order] o";
+            }
+
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+
+                    cmd.CommandText = $"{sqlCommandTxt} WHERE o.Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+                    Order order = null;
+
+                    while (reader.Read())
+                    {
+
+
+                        if (order == null)
+                        {
+                            order = new Order
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                            };
+                            try
+                            {
+                                order.PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"));
+
+                            }
+                            catch (SqlNullValueException)
+                            {
+                                // Don't do anything
+                            }
+                        }
+
+                        order.Products = new List<Product>();
+                        if (_include == "products")
+                        {
+                            if (!reader.IsDBNull(reader.GetOrdinal("ProductId")))
+                            {
+                                order.Products.Add(
+                                    new Product
+                                    {
+                                        Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                                        ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                        CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
+                                        Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                        Title = reader.GetString(reader.GetOrdinal("Title")),
+                                        Description = reader.GetString(reader.GetOrdinal("Description")),
+                                        Quantity = reader.GetInt32(reader.GetOrdinal("Quantity"))
+                                    }
+                               );
+                            }
+                        }
+                        else if (_include == "customers")
+                        {
+                            if (!reader.IsDBNull(reader.GetOrdinal("CId")))
+                            {
+                                order.Customer =
+                                new Customer
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("CId")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                                };
+                            }
+
+                        }
+                    }
+
+                    reader.Close();
+
+                    return Ok(order);
+                }
+            }
         }
 
         // POST api/<controller>
@@ -176,6 +291,25 @@ namespace BangazonAPI.Controllers
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+        }
+
+        private bool OrderExists(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT Id, CustomerId, PaymentTypeId
+                        FROM [Order]
+                        WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader.Read();
+                }
+            }
         }
     }
 }
