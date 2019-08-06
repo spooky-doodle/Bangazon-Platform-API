@@ -34,7 +34,10 @@ namespace BangazonAPI.Controllers
         // GET api/values
         [HttpGet]
 
-        public async Task<IActionResult> Get([FromQuery] string _include)
+        public async Task<IActionResult> Get(
+            [FromQuery] string _include, 
+            [FromQuery] string q = ""
+            )
         {
             // Ensures "", "products", or "payments"
             _include = CheckInclude(_include);
@@ -45,6 +48,9 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = MakeSqlGetCommand(_include);
+                    cmd.CommandText += " WHERE FirstName LIKE '%' + @q + '%'" +
+                        " OR LastName LIKE '%' + @q + '%'";
+                    cmd.Parameters.Add(new SqlParameter("@q", q));
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
