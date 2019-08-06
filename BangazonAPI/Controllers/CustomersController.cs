@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonAPI.Models;
@@ -32,28 +33,47 @@ namespace BangazonAPI.Controllers
 
         // GET api/values
         [HttpGet]
-        public async Task<IActionResult> Get()
+
+        public async Task<IActionResult> Get([FromQuery] string _include)
         {
+            // Ensures "", "products", or "payments"
+            _include = CheckInclude(_include);
+
             using (SqlConnection conn = Connection)
             {
                 await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT c.Id, c.FirstName, c.LastName FROM Customer c";
+                    cmd.CommandText = MakeSqlGetCommand(_include);
+
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     List<Customer> customers = new List<Customer>();
                     while (await reader.ReadAsync())
                     {
-                        Customer customer = new Customer
+                        int Id = reader.GetInt32(reader.GetOrdinal("Id"));
+                        int foundIndex = customers.FindIndex(cust => cust.Id == Id);
+                        Customer customer;
+                        if (foundIndex == -1)
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            // You might have more columns
-                        };
+                            customer = CreateCustomer(reader);
+                            customers.Add(customer);
+                        }
+                        else customer = customers[foundIndex];
 
-                        customers.Add(customer);
+
+                        if (_include == "products")
+                        {
+                            if (foundIndex == -1) customer.Products = new List<Product>();
+                            var newProduct = CreateProduct(reader);
+                            if (newProduct != null) customer.Products.Add(newProduct);
+                        }
+                        else if (_include == "payments")
+                        {
+                            customer.PaymentType = CreatePaymentType(reader);
+
+                        }
+
                     }
 
                     reader.Close();
@@ -63,10 +83,16 @@ namespace BangazonAPI.Controllers
             }
         }
 
+
+
         // GET api/values/5
         [HttpGet("{id}", Name = "GetCustomer")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get(
+            [FromRoute] int id,
+            [FromQuery] string _include = ""
+            )
         {
+            if (_include != "products" || _include != "payments") _include = "";
             using (SqlConnection conn = Connection)
             {
                 await conn.OpenAsync();
@@ -74,23 +100,19 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"SELECT c.Id, c.FirstName, c.LastName FROM Customer c
                     WHERE c.Id = @id                
-        ";
+                    ";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     Customer customer = null;
                     if (await reader.ReadAsync())
                     {
-                        customer = new Customer
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            // You might have more columns
-                        };
+                        customer = CreateCustomer(reader);
                     }
 
                     reader.Close();
+
+                    if (customer == null) return NotFound();
 
                     return Ok(customer);
                 }
@@ -208,6 +230,77 @@ namespace BangazonAPI.Controllers
         //    }
         //}
 
+        static private string CheckInclude(string include)
+        {
+            switch (include)
+            {
+                case "products":
+                    return "products";
+                case "payments":
+                    return "payments";
+                default:
+                    return "";
+            }
+        }
+
+
+        private Customer CreateCustomer(SqlDataReader reader)
+        {
+            return new Customer()
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+            };
+        }
+        static private Product CreateProduct(SqlDataReader reader)
+        {
+            try
+            {
+                return new Product()
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                    Title = reader.GetString(reader.GetOrdinal("Title")),
+                    Description = reader.GetString(reader.GetOrdinal("Description")),
+                    Quantity = reader.GetInt32(reader.GetOrdinal("Quantity")),
+                    Price = reader.GetDecimal(reader.GetOrdinal("Price"))
+                };
+            }
+            catch (SqlNullValueException)
+            {
+                return null;
+            }
+            
+        }
+
+        static private string MakeSqlGetCommand(string include)
+        {
+            var outputString = "SELECT c.Id, c.FirstName, c.LastName";
+            var productFields = "p.Title, p.Description, p.Quantity, p.Price, p.Id AS ProductId";
+            var paymentFields = "p.AcctNumber, p.[Name], p.Id AS PaymentId";
+
+            if (include == "products") outputString += $", {productFields}";
+            if (include == "payments") outputString += $", {paymentFields}";
+
+            outputString += " FROM Customer c";
+            if (include == "products") outputString += " LEFT JOIN Product p on c.Id = p.CustomerId";
+
+
+
+            return outputString;
+        }
+
+        static private PaymentType CreatePaymentType(SqlDataReader reader)
+        {
+            if (reader.GetString(reader.GetOrdinal("Name")) == null) return null;
+            return new PaymentType()
+            {
+
+                AcctNumber = reader.GetInt32(reader.GetOrdinal("Title")),
+                Name = reader.GetString(reader.GetOrdinal("Name"))
+            };
+
+        }
         private async Task<bool> CustomerExists(int id)
         {
             using (SqlConnection conn = Connection)
