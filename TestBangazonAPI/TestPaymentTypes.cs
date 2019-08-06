@@ -150,6 +150,8 @@ namespace TestBangazonAPI
             }
         }
 
+        
+
         [Fact]
         public async Task Delete_PaymentType()
         {
@@ -169,8 +171,6 @@ namespace TestBangazonAPI
 
                 string responseBody = await response.Content.ReadAsStringAsync();
                 var paymentType = JsonConvert.DeserializeObject<PaymentType>(responseBody);
-
-
 
                 /*
                  * ACT
