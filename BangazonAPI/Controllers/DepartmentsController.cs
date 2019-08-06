@@ -53,13 +53,14 @@ namespace BangazonAPI.Controllers
         [HttpGet]
 
         public async Task<IActionResult> Get(
-            [FromQuery] string _include, 
+            [FromQuery] string _include,
             [FromQuery] string _filter = "",
             [FromQuery] int _gt = 0
             )
         {
             // Ensures "" or "employees"
             _include = CheckInclude(_include);
+            // Ensures "" or "budget"
             _filter = CheckFilter(_filter);
 
             using (SqlConnection conn = Connection)
@@ -68,101 +69,104 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = MakeSqlGetCommand(_include);
-                    cmd.CommandText += " WHERE FirstName LIKE '%' + @q + '%'" +
-                        " OR LastName LIKE '%' + @q + '%'";
-                    cmd.Parameters.Add(new SqlParameter("@q", q));
+                    if (_filter == "budget")
+                    {
+                        cmd.CommandText += " WHERE Budget > @gt";
+
+                        cmd.Parameters.Add(new SqlParameter("@gt", _gt));
+                    }
+                    
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                    List<Customer> customers = new List<Customer>();
+                    List<Department> departments = new List<Department>();
                     while (await reader.ReadAsync())
                     {
                         int Id = reader.GetInt32(reader.GetOrdinal("Id"));
-                        int foundIndex = customers.FindIndex(cust => cust.Id == Id);
-                        Customer customer;
+                        int foundIndex = departments.FindIndex(dept => dept.Id == Id);
+                        Department department;
                         if (foundIndex == -1)
                         {
-                            customer = CreateCustomer(reader);
-                            customers.Add(customer);
+                            department = CreateDepartment(reader);
+                            departments.Add(department);
                         }
-                        else customer = customers[foundIndex];
+                        else department = departments[foundIndex];
 
 
-                        if (_include == "products")
+                        if (_include == "employees")
                         {
-                            if (foundIndex == -1) customer.Products = new List<Product>();
-                            var newProduct = CreateProduct(reader);
-                            if (newProduct != null) customer.Products.Add(newProduct);
+                            if (foundIndex == -1) department.Employees = new List<Employee>();
+                            var newEmployee = CreateEmployee(reader);
+                            if (newEmployee != null) department.Employees.Add(newEmployee);
                         }
-                        else if (_include == "payments")
-                        {
-                            if (foundIndex == -1) customer.PaymentTypes = new List<PaymentType>();
-                            var newPayment = CreatePaymentType(reader);
-                            if (newPayment != null) customer.PaymentTypes.Add(newPayment);
-
-                        }
+                       
 
                     }
 
                     reader.Close();
 
-                    return Ok(customers);
+                    return Ok(departments);
                 }
             }
         }
 
 
-
         // GET api/values/5
-        [HttpGet("{id}", Name = "GetCustomer")]
+        [HttpGet("{id}", Name = "GetDepartment")]
         public async Task<IActionResult> Get(
             [FromRoute] int id,
-            [FromQuery] string _include = ""
-            )
+         [FromQuery] string _include
+         )
         {
+            // Ensures "" or "employees"
             _include = CheckInclude(_include);
+
             using (SqlConnection conn = Connection)
             {
                 await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = MakeSqlGetCommand(_include);
-                    cmd.CommandText += " WHERE c.Id = @id";
+                    cmd.CommandText += " WHERE d.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
+                   
+
+
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                    Customer cust = null;
+                    Department department = null;
                     while (await reader.ReadAsync())
                     {
-                        int Id = reader.GetInt32(reader.GetOrdinal("Id"));
-                        if (cust == null) cust = CreateCustomer(reader);
-                        if (_include == "products")
+                        if (department == null)
                         {
-                            if (cust.Products == null) cust.Products = new List<Product>();
-                            var newProduct = CreateProduct(reader);
-                            if (newProduct != null) cust.Products.Add(newProduct);
+                            department = CreateDepartment(reader);
                         }
-                        else if (_include == "payments")
-                        {
-                            if (cust.PaymentTypes == null) cust.PaymentTypes = new List<PaymentType>();
-                            var newPayment = CreatePaymentType(reader);
-                            if (newPayment != null) cust.PaymentTypes.Add(newPayment);
 
+
+                        if (_include == "employees")
+                        {
+                            if (department.Employees == null) department.Employees = new List<Employee>();
+                            var newEmployee = CreateEmployee(reader);
+                            if (newEmployee != null) department.Employees.Add(newEmployee);
                         }
+
 
                     }
+
                     reader.Close();
 
-                    if (cust == null) return NotFound();
+                    if (department == null) return NotFound();
 
-                    return Ok(cust);
+                    return Ok(department);
                 }
             }
         }
 
+
+
         // POST api/values
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Customer customer)
+        public async Task<IActionResult> Post([FromBody] Department department)
         {
             using (SqlConnection conn = Connection)
             {
@@ -171,17 +175,17 @@ namespace BangazonAPI.Controllers
                 {
                     // More string interpolation
                     cmd.CommandText = @"
-                        INSERT INTO Customer (FirstName, LastName)
+                        INSERT INTO Department (Name, Budget)
                         OUTPUT INSERTED.Id
-                        VALUES (@firstName, @lastName)
+                        VALUES (@name, @budget)
                     ";
-                    cmd.Parameters.Add(new SqlParameter("@firstName", customer.FirstName));
-                    cmd.Parameters.Add(new SqlParameter("@lastName", customer.LastName));
+                    cmd.Parameters.Add(new SqlParameter("@name", department.Name));
+                    cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
 
 
-                    customer.Id = (int)await cmd.ExecuteScalarAsync();
+                    department.Id = (int)await cmd.ExecuteScalarAsync();
 
-                    return CreatedAtRoute("GetCustomer", new { id = customer.Id }, customer);
+                    return CreatedAtRoute("GetDepartment", new { id = department.Id }, department);
                 }
             }
         }
@@ -190,7 +194,7 @@ namespace BangazonAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(
             [FromRoute] int id,
-            [FromBody] Customer customer
+            [FromBody] Department department
             )
         {
             try
@@ -201,14 +205,14 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                            UPDATE Customer
-                            SET FirstName = @firstName,
-                                LastName = @lastName
+                            UPDATE Department
+                            SET Name = @name,
+                                Budget = @budget
                             WHERE Id = @id
                         ";
-                        cmd.Parameters.Add(new SqlParameter("@id", customer.Id));
-                        cmd.Parameters.Add(new SqlParameter("@firstName", customer.FirstName));
-                        cmd.Parameters.Add(new SqlParameter("@lastName", customer.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@name", department.Name));
+                        cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
 
 
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
@@ -224,7 +228,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (await CustomerExists(id) == false)
+                if (await DepartmentExists(id) == false)
                 {
                     return NotFound();
                 }
@@ -300,7 +304,7 @@ namespace BangazonAPI.Controllers
             {
                 return new Employee()
                 {
-                    Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                    Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
                     FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                     LastName = reader.GetString(reader.GetOrdinal("LastName")),
                     IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
@@ -310,7 +314,7 @@ namespace BangazonAPI.Controllers
             {
                 return null;
             }
-            
+
         }
 
         static private string MakeSqlGetCommand(string include)
@@ -329,26 +333,8 @@ namespace BangazonAPI.Controllers
             return outputString;
         }
 
-        static private PaymentType CreatePaymentType(SqlDataReader reader)
-        {
 
-            try
-            {
-                return new PaymentType()
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("PaymentId")),
-                    AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
-                    Name = reader.GetString(reader.GetOrdinal("Name"))
-                };
-            }
-            catch (SqlNullValueException)
-            {
-                return null;
-            }
-            
-
-        }
-        private async Task<bool> CustomerExists(int id)
+        private async Task<bool> DepartmentExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -356,7 +342,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     // More string interpolation
-                    cmd.CommandText = "SELECT Id FROM Customer WHERE Id = @id";
+                    cmd.CommandText = "SELECT Id FROM Department WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
