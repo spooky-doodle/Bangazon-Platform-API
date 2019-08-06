@@ -151,7 +151,7 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(customer.FirstName != null);
-                Assert.True(customer.Id == 1);
+                Assert.True(customer.Id == 2);
                 Assert.True(customer.Products.Count > 0);
             }
         }
@@ -181,7 +181,7 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(customer.FirstName != null);
-                Assert.True(customer.Id == 1);
+                Assert.True(customer.Id == 2);
                 Assert.True(customer.PaymentTypes.Count > 0);
             }
         }
