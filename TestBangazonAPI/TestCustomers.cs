@@ -15,325 +15,313 @@ namespace TestBangazonAPI
         [Fact]
         public async Task Test_Get_All_Customers()
         {
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE
-                */
+
+            /*
+                ARRANGE
+            */
 
 
-                /*
-                    ACT
-                */
-                var response = await client.GetAsync("/api/customers");
+            /*
+                ACT
+            */
 
+            // Fetch()
+            var response = await GetResponse("/api/customers");
+            // Json.Parse()
+            var customers = await ParseCustomerList(response);
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customers = JsonConvert.DeserializeObject<List<Customer>>(responseBody);
-
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(customers.Count > 0);
-            }
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(customers.Count > 0);
         }
+
+
+        [Fact]
+        public async Task Test_Get_Customers_Matching_Query()
+        {
+
+
+            /* Arrange */
+            Customer newCustomer = new Customer()
+            {
+                FirstName = "Adam's",
+                LastName = "Apple"
+            };
+
+            var postResponse = await PostCustomer(newCustomer);
+
+            Customer createdCustomer = await ParseOneCustomer(postResponse);
+
+
+            /* Act */
+            var queryResult = await GetResponse("/api/customers?q=Apple");
+
+
+            var queriedCustomers = await ParseCustomerList(queryResult);
+
+
+            /* Assert */
+
+
+            Assert.Equal(HttpStatusCode.Created, postResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, queryResult.StatusCode);
+
+
+            Assert.Contains<Customer>(createdCustomer, queriedCustomers);
+
+
+
+        }
+
+
 
         [Fact]
         public async Task Test_Get_All_Customers_Include_Products()
         {
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE  
-                    TODO:  Create a new product and assign to a customer.
-                */
+            /*
+                ARRANGE  
+                TODO:  Create a new product and assign to a customer.
+            */
 
 
-                /*
-                    ACT
-                */
-                var response = await client.GetAsync("/api/customers?_include=products");
+            /*
+                ACT
+            */
+            var response = await GetResponse("/api/customers?_include=products");
+            var customers = await ParseCustomerList(response);
 
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(customers.Count > 0);
+            Assert.NotNull(customers[1].Products[0]);
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customers = JsonConvert.DeserializeObject<List<Customer>>(responseBody);
-
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(customers.Count > 0);
-                Assert.NotNull(customers[1].Products[0]);
-
-            }
         }
 
         [Fact]
         public async Task Test_Get_All_Customers_Include_Payments()
         {
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE  
-                    TODO:  Create a new product and assign to a customer.
-                */
+            /*
+                ARRANGE  
+                TODO:  Create a new product and assign to a customer.
+            */
 
 
-                /*
-                    ACT
-                */
-                var response = await client.GetAsync("/api/customers?_include=payments");
+            /*
+                ACT
+            */
+            var response = await GetResponse("/api/customers?_include=payments");
 
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customers = JsonConvert.DeserializeObject<List<Customer>>(responseBody);
+            var customers = await ParseCustomerList(response);
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(customers.Count > 0);
-                Assert.NotNull(customers[1].PaymentTypes[0]);
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(customers.Count > 0);
+            Assert.NotNull(customers[1].PaymentTypes[0]);
 
-            }
         }
 
         [Fact]
         public async Task Test_Get_One_Customer()
         {
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE
-                */
+            /*
+                ARRANGE
+            */
 
 
-                /*
-                    ACT
-                */
-                var response = await client.GetAsync("/api/customers/1");
+            /*
+                ACT
+            */
+            var response = await GetResponse("/api/customers/1");
 
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+            var customer = await ParseOneCustomer(response);
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(customer.FirstName != null);
-                Assert.True(customer.Id == 1);
-            }
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(customer.FirstName != null);
+            Assert.True(customer.Id == 1);
         }
 
         [Fact]
         public async Task Test_Get_One_Customer_Include_Products()
         {
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE
-                */
+            /*
+                ARRANGE
+            */
 
 
-                /*
-                    ACT
-                */
-                var response = await client.GetAsync("/api/customers/2?_include=products");
+            /*
+                ACT
+            */
+            var response = await GetResponse("/api/customers/2?_include=products");
 
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+            var customer = await ParseOneCustomer(response);
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(customer.FirstName != null);
-                Assert.True(customer.Id == 2);
-                Assert.True(customer.Products.Count > 0);
-            }
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(customer.FirstName != null);
+            Assert.True(customer.Id == 2);
+            Assert.True(customer.Products.Count > 0);
         }
 
 
         [Fact]
         public async Task Test_Get_One_Customer_Include_Payments()
         {
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE
-                */
+            /*
+                ARRANGE
+            */
 
 
-                /*
-                    ACT
-                */
-                var response = await client.GetAsync("/api/customers/2?_include=payments");
+            /*
+                ACT
+            */
+            var response = await GetResponse("/api/customers/2?_include=payments");
 
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+            var customer = await ParseOneCustomer(response);
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(customer.FirstName != null);
-                Assert.True(customer.Id == 2);
-                Assert.True(customer.PaymentTypes.Count > 0);
-            }
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(customer.FirstName != null);
+            Assert.True(customer.Id == 2);
+            Assert.True(customer.PaymentTypes.Count > 0);
         }
         [Fact]
         public async Task Test_Get_One_Customer_Nonexistant()
         {
-            using (var client = new APIClientProvider().Client)
-            {
-                /*
-                    ARRANGE
-                */
+            /*
+                ARRANGE
+            */
 
 
-                /*
-                    ACT
-                */
-                var response = await client.GetAsync("/api/customers/99999999");
+            /*
+                ACT
+            */
+            var response = await GetResponse("/api/customers/99999999");
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-            }
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
         [Fact]
         public async Task Test_Create_New_Customer()
         {
-            using (var client = new APIClientProvider().Client)
+            /*
+                ARRANGE
+            */
+            Customer newCustomer = new Customer()
             {
-                /*
-                    ARRANGE
-                */
-                Customer newCustomer = new Customer()
-                {
-                    FirstName = "Bob",
-                    LastName = "Barker"
-                };
-
-                var jsonCustomer = JsonConvert.SerializeObject(newCustomer);
-
-                /*
-                    ACT
-                */
-                var response = await client.PostAsync(
-                    "/api/customers",
-                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
-                    );
+                FirstName = "Bob",
+                LastName = "Barker"
+            };
 
 
-                string responseBody = await response.Content.ReadAsStringAsync();
-                var customer = JsonConvert.DeserializeObject<Customer>(responseBody);
+            /*
+                ACT
+            */
+            var response = await PostCustomer(newCustomer);
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-                Assert.True(customer.Id != 0);
-                Assert.Equal(customer.FirstName, newCustomer.FirstName);
-                Assert.Equal(customer.LastName, newCustomer.LastName);
+            var createdCustomer = await ParseOneCustomer(response);
+
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            Assert.True(createdCustomer.Id != 0);
+            Assert.Equal(createdCustomer.FirstName, newCustomer.FirstName);
+            Assert.Equal(createdCustomer.LastName, newCustomer.LastName);
 
 
-            }
         }
 
         [Fact]
         public async Task Test_Update_Existing_Customer()
         {
             int testId = 2;
-            using (var client = new APIClientProvider().Client)
+            /*
+                ARRANGE
+            */
+
+            Customer testCustomer = new Customer()
             {
-                /*
-                    ARRANGE
-                */
-
-                Customer testCustomer = new Customer()
-                {
-                    Id = testId,
-                    FirstName = "Jason",
-                    LastName = "Server"
-                };
-
-                var jsonCustomer = JsonConvert.SerializeObject(testCustomer);
-
-                /*
-                    ACT
-                */
-                var response = await client.PutAsync(
-                    $"/api/customers/{testId}",
-                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
-                    );
+                Id = testId,
+                FirstName = "Jason",
+                LastName = "Server"
+            };
 
 
+            /*
+                ACT
+            */
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-
-                /*   
-                 *   GET   
-                */
-
-                var getCustomer = await client.GetAsync($"/api/customers/{testId}");
-                getCustomer.EnsureSuccessStatusCode();
-
-                string getResponse = await getCustomer.Content.ReadAsStringAsync();
-                Customer updatedCustomer = JsonConvert.DeserializeObject<Customer>(getResponse);
-
-                Assert.Equal(HttpStatusCode.OK, getCustomer.StatusCode);
-                Assert.Equal(testId, updatedCustomer.Id);
-                Assert.Equal(testCustomer.FirstName, updatedCustomer.FirstName);
-                Assert.Equal(testCustomer.LastName, updatedCustomer.LastName);
+            //  Put the updated customer
+            var response = await PutCustomer(testCustomer, testId);
 
 
-            }
+            // Then fetch.
+            var getCustomer = await GetResponse($"/api/customers/{testId}");
+            Customer updatedCustomer = await ParseOneCustomer(getCustomer);
+
+
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+            getCustomer.EnsureSuccessStatusCode();
+
+
+            Assert.Equal(HttpStatusCode.OK, getCustomer.StatusCode);
+            Assert.Equal(testId, updatedCustomer.Id);
+            Assert.Equal(testCustomer.FirstName, updatedCustomer.FirstName);
+            Assert.Equal(testCustomer.LastName, updatedCustomer.LastName);
+
+
         }
 
         [Fact]
         public async Task Test_Update_Nonexisting_Customer()
         {
-            using (var client = new APIClientProvider().Client)
+            /*
+                ARRANGE
+            */
+
+            Customer testCustomer = new Customer()
             {
-                /*
-                    ARRANGE
-                */
+                FirstName = "Billy",
+                LastName = "Blanks"
+            };
 
-                Customer testCustomer = new Customer()
-                {
-                    FirstName = "Billy",
-                    LastName = "Blanks"
-                };
 
-                var jsonCustomer = JsonConvert.SerializeObject(testCustomer);
-
-                /*
-                    ACT
-                */
-                var response = await client.PutAsync(
-                    "/api/customers/9999999",
-                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
-                    );
+            /*
+                ACT
+            */
+            var response = await PutCustomer(testCustomer, 91231274);
 
 
 
 
-                /*
-                    ASSERT
-                */
-                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
 
-            }
         }
 
         [Fact]
@@ -345,7 +333,7 @@ namespace TestBangazonAPI
                     ARRANGE
                 */
 
-                
+
 
                 /*
                     ACT
@@ -361,6 +349,61 @@ namespace TestBangazonAPI
                 Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
 
 
+            }
+        }
+
+
+
+
+
+        //  Begin helper methods
+
+        private async Task<HttpResponseMessage> GetResponse(string url)
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                return await client.GetAsync(url);
+            }
+        }
+
+
+        private async Task<HttpResponseMessage> PostCustomer(Customer newCustomer)
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+
+                var jsonCustomer = JsonConvert.SerializeObject(newCustomer);
+                return await client.PostAsync(
+                    "/api/customers",
+                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
+                    );
+            }
+        }
+
+        private async Task<Customer> ParseOneCustomer(HttpResponseMessage response)
+        {
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var parsedCustomer = JsonConvert.DeserializeObject<Customer>(responseBody);
+            return parsedCustomer;
+        }
+
+        private async Task<List<Customer>> ParseCustomerList(HttpResponseMessage response)
+        {
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var parsedCustomers = JsonConvert.DeserializeObject<List<Customer>>(responseBody);
+            return parsedCustomers;
+        }
+
+        private async Task<HttpResponseMessage> PutCustomer(Customer updatedCustomer, int testId)
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                var jsonCustomer = JsonConvert.SerializeObject(updatedCustomer);
+
+                return await client.PutAsync(
+                    $"/api/customers/{testId}",
+                    new StringContent(jsonCustomer, Encoding.UTF8, "application/json")
+                    );
             }
         }
 
@@ -440,6 +483,7 @@ namespace TestBangazonAPI
 
         //    }
         //}
-
     }
 }
+
+
