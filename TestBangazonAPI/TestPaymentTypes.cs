@@ -84,7 +84,7 @@ namespace TestBangazonAPI
                 * ACT
                 */
                 var response = await client.PostAsync("/api/PaymentTypes",
-                    new StringContent(jsonNewPaymentType, 
+                    new StringContent(jsonNewPaymentType,
                     Encoding.UTF8, "application/json"));
 
                 string responseBody = await response.Content.ReadAsStringAsync();
@@ -98,6 +98,40 @@ namespace TestBangazonAPI
                 Assert.Equal(newPaymentType.Name, paymentType.Name);
                 Assert.Equal(newPaymentType.AcctNumber, paymentType.AcctNumber);
                 Assert.Equal(newPaymentType.CustomerId, paymentType.CustomerId);
+            }
+        }
+
+        [Fact]
+        public async Task Test_Update_Existing_PaymentType()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                 * ARRANGE
+                 */
+
+                PaymentType testPaymentType = new PaymentType()
+                {
+                    Id = 5,
+                    Name = "CitiBank",
+                    AcctNumber = 12346,
+                    CustomerId = 2
+                };
+
+                var jsonTestPaymentType = JsonConvert.SerializeObject(testPaymentType);
+
+                /*
+                    ACT
+                */
+                var response = await client.PutAsync(
+                    $"/api/customers/5",
+                    new StringContent(jsonTestPaymentType, Encoding.UTF8, "application/json")
+                    );
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
             }
         }
     }
