@@ -94,11 +94,30 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        // POST: api/PaymentTypes
-        //[HttpPost]
-        //public void Post([FromBody] string value)
-        //{
-        //}
+        //POST: api/PaymentTypes
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] PaymentType paymentType)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using(SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                                        INSERT INTO PaymentType(Name, AcctNumber, CustomerId)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@name, @acctNumber, @customerId)
+                                      ";
+                    cmd.Parameters.Add(new SqlParameter("@name", paymentType.Name));
+                    cmd.Parameters.Add(new SqlParameter("@AcctNumber", paymentType.AcctNumber));
+                    cmd.Parameters.Add(new SqlParameter("@customerId", paymentType.CustomerId));
+
+                    paymentType.Id = (int)await cmd.ExecuteScalarAsync();
+
+                    return CreatedAtRoute("GetPaymentType", new { id = paymentType.Id }, paymentType);
+                }
+            }
+        }
 
         // PUT: api/PaymentTypes/5
         //[HttpPut("{id}")]
