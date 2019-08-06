@@ -45,7 +45,8 @@ namespace TestBangazonAPI
             using (var client = new APIClientProvider().Client)
             {
                 /*
-                    ARRANGE
+                    ARRANGE  
+                    TODO:  Create a new product and assign to a customer.
                 */
 
 
@@ -63,7 +64,7 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(customers.Count > 0);
-                Assert.NotNull(customers[0].Products);
+                Assert.NotNull(customers[1].Products[0]);
 
             }
         }
