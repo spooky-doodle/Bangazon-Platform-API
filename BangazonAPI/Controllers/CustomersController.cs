@@ -209,10 +209,12 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        // DELETE api/values/5
+        // DELETE api/customers/5
         //[HttpDelete("{id}")]
-        //public async Task<IActionResult> Delete(int id)
+        //public ActionResult Delete(/* int id */)
         //{
+
+        //    return Forbid();
         //    try
         //    {
 
