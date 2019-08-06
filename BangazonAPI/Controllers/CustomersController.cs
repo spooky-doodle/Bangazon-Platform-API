@@ -284,6 +284,8 @@ namespace BangazonAPI.Controllers
 
             outputString += " FROM Customer c";
             if (include == "products") outputString += " LEFT JOIN Product p on c.Id = p.CustomerId";
+            if (include == "payments") outputString += " LEFT JOIN PaymentType p on c.Id = p.CustomerId";
+
 
 
 
@@ -292,13 +294,21 @@ namespace BangazonAPI.Controllers
 
         static private PaymentType CreatePaymentType(SqlDataReader reader)
         {
-            if (reader.GetString(reader.GetOrdinal("Name")) == null) return null;
-            return new PaymentType()
-            {
 
-                AcctNumber = reader.GetInt32(reader.GetOrdinal("Title")),
-                Name = reader.GetString(reader.GetOrdinal("Name"))
-            };
+            try
+            {
+                return new PaymentType()
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("PaymentId")),
+                    AcctNumber = reader.GetInt32(reader.GetOrdinal("AcctNumber")),
+                    Name = reader.GetString(reader.GetOrdinal("Name"))
+                };
+            }
+            catch (SqlNullValueException)
+            {
+                return null;
+            }
+            
 
         }
         private async Task<bool> CustomerExists(int id)
