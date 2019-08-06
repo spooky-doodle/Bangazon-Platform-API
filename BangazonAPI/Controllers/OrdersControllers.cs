@@ -34,18 +34,37 @@ namespace BangazonAPI.Controllers
 
         // GET: api/<controller>
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] string q)
+        public async Task<IActionResult> Get([FromQuery] string _include)
 
         {
             using (SqlConnection conn = Connection)
             {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
+                string sqlCommandTxt;
+
+                if (_include == "products")
                 {
-                    cmd.CommandText = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
+                    sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
                                         FROM [Order] o
                                         LEFT JOIN OrderProduct op ON op.OrderId = o.Id
                                         LEFT JOIN Product p ON p.Id = op.ProductId";
+                } else if (_include == "customers")
+                {
+                    sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, 
+                                        c.Id AS CId, c.FirstName, c.LastName
+                                        FROM [Order] o
+                                        LEFT JOIN Customer c ON c.Id = o.CustomerId";
+                } else
+                {
+                    sqlCommandTxt = @"SELECT Id, CustomerId, PaymentTypeId
+                                         FROM [Order]";
+                }
+
+
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = sqlCommandTxt;
+
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     List<Order> orders = new List<Order>();
@@ -66,11 +85,11 @@ namespace BangazonAPI.Controllers
                             catch (SqlNullValueException)
                             {
                                 // Don't do anything
-                            }                       
-                       
-                        if (q == "_include=products")
+                            }
+
+                        if (_include == "products")
                         {
-                            
+
                             Product product = new Product
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
@@ -81,11 +100,11 @@ namespace BangazonAPI.Controllers
                                 Description = reader.GetString(reader.GetOrdinal("Description")),
                                 Quantity = reader.GetInt32(reader.GetOrdinal("Quantity"))
                             };
+                            order.Products = new List<Product>();
 
                             if (orders.Any(o => o.Id == order.Id))
                             {
                                 Order existingOrder = orders.Find(o => o.Id == order.Id);
-                                order.Products = new List<Product>();
                                 existingOrder.Products.Add(product);
                             }
                             else
@@ -93,9 +112,22 @@ namespace BangazonAPI.Controllers
                                 order.Products.Add(product);
                                 orders.Add(order);
                             }
+                        } else if (_include == "customers")
+                        {
+                            Customer customer = new Customer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("CId")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                            };
 
-                        }
+                            order.Customer = customer;
                             orders.Add(order);
+                        } else
+                        {
+                            orders.Add(order);
+                        }
+                       
                     }
 
                     reader.Close();
