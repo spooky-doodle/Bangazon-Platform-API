@@ -167,11 +167,41 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        // DELETE: api/ApiWithActions/5
-        //[HttpDelete("{ id}")]
-        //public void Delete(int id)
-        //{
-        //}
+        // DELETE api/<controller>/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE FROM PaymentType WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (await PaymentTypeExists(id) == false)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
 
         private async Task<bool> PaymentTypeExists(int id)
         {
