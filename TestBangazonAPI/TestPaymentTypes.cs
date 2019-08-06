@@ -124,7 +124,7 @@ namespace TestBangazonAPI
                     ACT
                 */
                 var response = await client.PutAsync(
-                    $"/api/customers/5",
+                    "/api/PaymentTypes/5",
                     new StringContent(jsonTestPaymentType, Encoding.UTF8, "application/json")
                     );
 
@@ -132,6 +132,21 @@ namespace TestBangazonAPI
                     ASSERT
                 */
                 Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+                /*   
+                 *   GET   
+                */
+
+                var getPaymentType = await client.GetAsync($"/api/PaymentTypes/5");
+                getPaymentType.EnsureSuccessStatusCode();
+
+                string getResponse = await getPaymentType.Content.ReadAsStringAsync();
+                PaymentType updatedPaymentType = JsonConvert.DeserializeObject<PaymentType>(getResponse);
+
+                Assert.Equal(HttpStatusCode.OK, getPaymentType.StatusCode);
+                Assert.Equal(5, updatedPaymentType.Id);
+                Assert.Equal(testPaymentType.Name, updatedPaymentType.Name);
+                Assert.Equal(testPaymentType.AcctNumber, updatedPaymentType.AcctNumber);
             }
         }
     }
