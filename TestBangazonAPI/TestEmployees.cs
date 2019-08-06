@@ -13,7 +13,7 @@ namespace TestBangazonAPI
     public class TestEmployee
     {
         [Fact]
-        public async Task Test_Get_All_PaymentTypes()
+        public async Task Test_Get_All_Employees()
         {
             using (var client = new APIClientProvider().Client)
             {
@@ -34,6 +34,9 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(employees.Count > 0);
+                Assert.NotNull(employees[1].Department.Name);
+                Assert.NotNull(employees[1].Computer);
+                Assert.NotNull(employees[1].Computer.Manufacturer);
             }
         }
 

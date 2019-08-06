@@ -18,5 +18,9 @@ namespace BangazonAPI.Models
         [Required]
         public bool IsSupervisor { get; set; }
 
+        public Department Department = new Department();
+
+        public Computer Computer = new Computer();
+
     }
 }
