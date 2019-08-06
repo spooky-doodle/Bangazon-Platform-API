@@ -34,7 +34,8 @@ namespace BangazonAPI.Controllers
 
         // GET: api/<controller>
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery] string q)
+
         {
             using (SqlConnection conn = Connection)
             {
@@ -51,42 +52,50 @@ namespace BangazonAPI.Controllers
 
                     while (reader.Read())
                     {
-                        Order order = new Order
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            Products = new List<Product>()
-                        };
-                        try
-                        {
-                            order.PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"));
-                
-                        }
-                        catch (SqlNullValueException)
-                        {
-                            // Don't do anything
-                        }
 
-                        Product product = new Product
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
-                            ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
-                            Price = reader.GetDecimal(reader.GetOrdinal("Price")),
-                            Title = reader.GetString(reader.GetOrdinal("Title")),
-                            Description = reader.GetString(reader.GetOrdinal("Description")),
-                        };
+                            Order order = new Order
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                            };
+                            try
+                            {
+                                order.PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId"));
 
-                        if (orders.Any(o => o.Id == order.Id))
+                            }
+                            catch (SqlNullValueException)
+                            {
+                                // Don't do anything
+                            }                       
+                       
+                        if (q == "_include=products")
                         {
-                            Order existingOrder = orders.Find(o => o.Id == order.Id);
-                            existingOrder.Products.Add(product);
+                            
+                            Product product = new Product
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                                ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
+                                Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                Title = reader.GetString(reader.GetOrdinal("Title")),
+                                Description = reader.GetString(reader.GetOrdinal("Description")),
+                                Quantity = reader.GetInt32(reader.GetOrdinal("Quantity"))
+                            };
+
+                            if (orders.Any(o => o.Id == order.Id))
+                            {
+                                Order existingOrder = orders.Find(o => o.Id == order.Id);
+                                order.Products = new List<Product>();
+                                existingOrder.Products.Add(product);
+                            }
+                            else
+                            {
+                                order.Products.Add(product);
+                                orders.Add(order);
+                            }
+
                         }
-                        else
-                        {
-                            order.Products.Add(product);
                             orders.Add(order);
-                        }
                     }
 
                     reader.Close();
