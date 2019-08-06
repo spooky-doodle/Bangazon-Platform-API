@@ -117,10 +117,91 @@ namespace BangazonAPI.Controllers
         }
 
         // GET api/<controller>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{id}", Name = "GetSpecificEmployee")]
+        public async Task<IActionResult> GetSpecificEmployee(int id)
         {
-            return "value";
+            using (SqlConnection conn = Connection)
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT e.Id AS EmployeeId, 
+                                        e.FirstName, 
+                                        e.LastName, 
+                                        e.DepartmentId AS DeptId, 
+                                        e.IsSuperVisor, 
+                                        d.Id AS DepartmentId, 
+                                        d.Name, 
+                                        d.Budget, 
+                                        ce.Id AS ComputerEmployeeId, 
+                                        ce.EmployeeId, 
+                                        ce.ComputerId AS CompId, 
+                                        ce.AssignDate, 
+                                        ce.UnassignDate, 
+                                        c.Id AS ComputerId, 
+                                        c.Make, 
+                                        c.Manufacturer, 
+                                        c.PurchaseDate, 
+                                        c.DecomissionDate
+                                        FROM Employee e
+                                        JOIN Department d
+                                        ON e.DepartmentId = d.Id
+                                        JOIN ComputerEmployee ce
+                                        ON e.Id = ce.EmployeeId
+                                        JOIN Computer c
+                                        ON ce.ComputerId = c.Id
+                                        WHERE e.Id = @id
+                                      ";
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+                    List<Employee> employees = new List<Employee>();
+                    while (await reader.ReadAsync())
+                    {
+                        Employee employee = new Employee
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DeptId")),
+                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
+
+                        };
+
+                        if (reader.GetInt32(reader.GetOrdinal("DepartmentId")) > 0)
+                        {
+                            employee.Department = new Department()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                                Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
+                            };
+                        }
+
+                        if (reader.GetInt32(reader.GetOrdinal("ComputerId")) > 0)
+                        {
+                            employee.Computer = new Computer()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))
+                            };
+                            try
+                            {
+                                employee.Computer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
+                            }
+                            catch (IndexOutOfRangeException)
+                            {
+                                employee.Computer.DecommissionDate = null;
+                            }
+                        }
+                        employees.Add(employee);
+                    }
+
+                    reader.Close();
+                    return Ok(employees);
+                }
+            }
         }
 
         // POST api/<controller>
