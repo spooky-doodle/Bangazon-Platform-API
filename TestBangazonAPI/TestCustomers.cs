@@ -70,6 +70,36 @@ namespace TestBangazonAPI
         }
 
         [Fact]
+        public async Task Test_Get_All_Customers_Include_Payments()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                    ARRANGE  
+                    TODO:  Create a new product and assign to a customer.
+                */
+
+
+                /*
+                    ACT
+                */
+                var response = await client.GetAsync("/api/customers?_include=products");
+
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var customers = JsonConvert.DeserializeObject<List<Customer>>(responseBody);
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.True(customers.Count > 0);
+                Assert.NotNull(customers[1].PaymentType);
+
+            }
+        }
+
+        [Fact]
         public async Task Test_Get_One_Customer()
         {
             using (var client = new APIClientProvider().Client)
