@@ -42,13 +42,10 @@ namespace BangazonAPI.Controllers
                                         e.FirstName, 
                                         e.LastName, 
                                         e.DepartmentId AS DeptId, 
-                                        e.IsSuperVisor, 
+                                        e.IsSupervisor, 
                                         d.Id AS DepartmentId, 
                                         d.Name, 
                                         d.Budget, 
-                                        ce.Id AS ComputerEmployeeId, 
-                                        ce.EmployeeId, 
-                                        ce.ComputerId AS CompId, 
                                         ce.AssignDate, 
                                         ce.UnassignDate, 
                                         c.Id AS ComputerId, 
@@ -63,35 +60,49 @@ namespace BangazonAPI.Controllers
                                         ON e.Id = ce.EmployeeId
                                         JOIN Computer c
                                         ON ce.ComputerId = c.Id
+                                        ORDER BY e.Id
                                       ";
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     List<Employee> employees = new List<Employee>();
                     while (await reader.ReadAsync())
                     {
-                        Employee employee = new Employee
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DeptId")),
-                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
+                        int id = reader.GetInt32(reader.GetOrdinal("EmployeeId"));
+                        Employee employee = employees.Find(e => id == e.Id);
 
-                        };
-
-                        if (reader.GetInt32(reader.GetOrdinal("DepartmentId")) > 0)
+                        if (employee == null)
                         {
-                            employee.Department = new Department()
+                            employee = new Employee
+                            {
+                                Id = id,
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                DepartmentId = reader.GetInt32(reader.GetOrdinal("DeptId")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
+
+                            };
+                            employees.Add(employee);
+                        }
+
+                        try
+                        {
+                            Department department = new Department()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
                                 Name = reader.GetString(reader.GetOrdinal("Name")),
                                 Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
                             };
+                            employee.Department = department;
                         }
-
-                        if (reader.GetInt32(reader.GetOrdinal("ComputerId")) > 0)
+                        
+                        catch(SqlNullValueException)
                         {
-                            employee.Computer = new Computer()
+                            // nada
+                        };
+
+                        try
+                        {
+                            Computer computer = new Computer()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
                                 Make = reader.GetString(reader.GetOrdinal("Make")),
@@ -100,14 +111,18 @@ namespace BangazonAPI.Controllers
                             };
                             try
                             {
-                                employee.Computer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
+                               computer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
                             }
                             catch (IndexOutOfRangeException)
                             {
-                                employee.Computer.DecommissionDate = null;
+                                computer.DecommissionDate = null;
                             }
+                            employee.Computers.Add(computer);
                         }
-                        employees.Add(employee);
+                        catch
+                        {
+                            // nada
+                        }
                     }
 
                     reader.Close();
@@ -117,8 +132,8 @@ namespace BangazonAPI.Controllers
         }
 
         // GET api/<controller>/5
-        [HttpGet("{id}", Name = "GetSpecificEmployee")]
-        public async Task<IActionResult> GetSpecificEmployee(int id)
+        [HttpGet("{id}", Name = "GetEmployee")]
+        public async Task<IActionResult> Get([FromRoute]int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -129,13 +144,10 @@ namespace BangazonAPI.Controllers
                                         e.FirstName, 
                                         e.LastName, 
                                         e.DepartmentId AS DeptId, 
-                                        e.IsSuperVisor, 
+                                        e.IsSupervisor, 
                                         d.Id AS DepartmentId, 
                                         d.Name, 
                                         d.Budget, 
-                                        ce.Id AS ComputerEmployeeId, 
-                                        ce.EmployeeId, 
-                                        ce.ComputerId AS CompId, 
                                         ce.AssignDate, 
                                         ce.UnassignDate, 
                                         c.Id AS ComputerId, 
@@ -152,34 +164,43 @@ namespace BangazonAPI.Controllers
                                         ON ce.ComputerId = c.Id
                                         WHERE e.Id = @id
                                       ";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                    List<Employee> employees = new List<Employee>();
-                    while (await reader.ReadAsync())
+                    Employee employee = null;
+                    if (reader.Read())
                     {
-                        Employee employee = new Employee
+                        if (employee == null)
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DeptId")),
-                            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
+                            employee = new Employee()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                DepartmentId = reader.GetInt32(reader.GetOrdinal("DeptId")),
+                                IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
+                            };
+                        }
 
-                        };
-
-                        if (reader.GetInt32(reader.GetOrdinal("DepartmentId")) > 0)
+                        try
                         {
-                            employee.Department = new Department()
+                            Department department = new Department()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
                                 Name = reader.GetString(reader.GetOrdinal("Name")),
                                 Budget = reader.GetInt32(reader.GetOrdinal("Budget"))
                             };
+                            employee.Department = department;
                         }
 
-                        if (reader.GetInt32(reader.GetOrdinal("ComputerId")) > 0)
+                        catch (SqlNullValueException)
                         {
-                            employee.Computer = new Computer()
+                            // nada
+                        };
+
+                        try
+                        {
+                            Computer computer = new Computer()
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
                                 Make = reader.GetString(reader.GetOrdinal("Make")),
@@ -188,18 +209,22 @@ namespace BangazonAPI.Controllers
                             };
                             try
                             {
-                                employee.Computer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
+                                computer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
                             }
                             catch (IndexOutOfRangeException)
                             {
-                                employee.Computer.DecommissionDate = null;
+                                computer.DecommissionDate = null;
                             }
+                            employee.Computers.Add(computer);
                         }
-                        employees.Add(employee);
+                        catch
+                        {
+                            // nada
+                        }
                     }
 
                     reader.Close();
-                    return Ok(employees);
+                    return Ok(employee);
                 }
             }
         }

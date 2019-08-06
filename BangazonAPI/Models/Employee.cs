@@ -20,7 +20,7 @@ namespace BangazonAPI.Models
 
         public Department Department = new Department();
 
-        public Computer Computer = new Computer();
+        public List<Computer> Computers = new List<Computer>();
 
     }
 }
