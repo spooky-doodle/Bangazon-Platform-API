@@ -93,7 +93,7 @@ namespace TestBangazonAPI
 
 
         [Fact]
-        public async Task Test_Get_All_Departments_Include_Employeess()
+        public async Task Test_Get_All_Departments_Include_Employees()
         {
             /*
                 ARRANGE  
@@ -145,6 +145,7 @@ namespace TestBangazonAPI
         [Fact]
         public async Task Test_Get_One_Department_Include_Employees()
         {
+            int testId = 2;
             /*
                 ARRANGE
             */
@@ -153,7 +154,7 @@ namespace TestBangazonAPI
             /*
                 ACT
             */
-            var response = await GetResponse("/api/Departments/2?_include=employees");
+            var response = await GetResponse($"/api/Departments/{testId}?_include=employees");
 
 
             var Department = await ParseOneDepartment(response);
@@ -163,7 +164,7 @@ namespace TestBangazonAPI
             */
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.NotNull(Department.Name);
-            Assert.True(Department.Id == 2);
+            Assert.True(Department.Id == testId);
             Assert.NotEmpty(Department.Employees);
         }
 
@@ -194,7 +195,7 @@ namespace TestBangazonAPI
             Department newDepartment = new Department()
             {
                 Name = "Bob",
-                LastName = "Barker"
+                Budget = 200000
             };
 
 
@@ -210,8 +211,8 @@ namespace TestBangazonAPI
             */
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             Assert.True(createdDepartment.Id != 0);
-            Assert.Equal(createdDepartment.FirstName, newDepartment.FirstName);
-            Assert.Equal(createdDepartment.LastName, newDepartment.LastName);
+            Assert.Equal(createdDepartment.Name, newDepartment.Name);
+            Assert.Equal(createdDepartment.Budget, newDepartment.Budget);
 
 
         }
@@ -219,43 +220,51 @@ namespace TestBangazonAPI
         [Fact]
         public async Task Test_Update_Existing_Department()
         {
-            int testId = 2;
             /*
                 ARRANGE
             */
 
-            Department testDepartment = new Department()
+            Department newDepartment = new Department()
             {
-                Id = testId,
-                FirstName = "Jason",
-                LastName = "Server"
+                Name = "Apples",
+                Budget = 200000
             };
 
+            var createdResponse = await PostDepartment(newDepartment);
+            var parsedDepartment = await ParseOneDepartment(createdResponse);
 
+            var departmentToUpdate = new Department()
+            {
+                Name = "Bananas",
+                Budget = 500000
+            };
             /*
                 ACT
             */
 
             //  Put the updated Department
-            var response = await PutDepartment(testDepartment, testId);
+            var updateResponse = await PutDepartment(departmentToUpdate, parsedDepartment.Id);
 
 
             // Then fetch.
-            var getDepartment = await GetResponse($"/api/Departments/{testId}");
+            var getDepartment = await GetResponse($"/api/Departments/{parsedDepartment.Id}");
             Department updatedDepartment = await ParseOneDepartment(getDepartment);
 
 
             /*
                 ASSERT
             */
-            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-            getDepartment.EnsureSuccessStatusCode();
 
-
+            //  Make sure create was successful
+            Assert.Equal(HttpStatusCode.Created, createdResponse.StatusCode);
+            //  Make sure update was successful
+            Assert.Equal(HttpStatusCode.NoContent, updateResponse.StatusCode);
+            //  Make sure get was successful
             Assert.Equal(HttpStatusCode.OK, getDepartment.StatusCode);
-            Assert.Equal(testId, updatedDepartment.Id);
-            Assert.Equal(testDepartment.FirstName, updatedDepartment.FirstName);
-            Assert.Equal(testDepartment.LastName, updatedDepartment.LastName);
+
+            Assert.Equal(parsedDepartment.Id, updatedDepartment.Id);
+            Assert.Equal(departmentToUpdate.Name, updatedDepartment.Name);
+            Assert.Equal(departmentToUpdate.Budget, updatedDepartment.Budget);
 
 
         }
@@ -269,8 +278,8 @@ namespace TestBangazonAPI
 
             Department testDepartment = new Department()
             {
-                FirstName = "Billy",
-                LastName = "Blanks"
+                Name = "Billy",
+                Budget = 55000
             };
 
 
@@ -304,7 +313,7 @@ namespace TestBangazonAPI
                 /*
                     ACT
                 */
-                var response = await client.DeleteAsync("/api/Departments/1");
+                var response = await client.DeleteAsync("/api/departments/1");
 
 
 
