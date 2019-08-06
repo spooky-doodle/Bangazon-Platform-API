@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Threading.Tasks;
 using BangazonAPI.Models;
@@ -50,15 +51,22 @@ namespace BangazonAPI.Controllers
 
                     while (reader.Read())
                     {
-                        Order order = new Order
+                        try
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId")),
-                            Products = new List<Product>()
-                        };
+                            Order order = new Order
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                PaymentTypeId = reader.GetInt32(reader.GetOrdinal("PaymentTypeId")),
+                                //Products = new List<Product>()
+                            };
 
-                        orders.Add(order);
+                            orders.Add(order);
+                        }
+                        catch (SqlNullValueException)
+                        {
+                            return null;
+                        }
 
                         //Product product = new Product
                         //{
