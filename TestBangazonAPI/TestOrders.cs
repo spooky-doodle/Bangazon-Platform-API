@@ -12,7 +12,7 @@ namespace TestBangazonAPI
     public class TestOrders
     {
         [Fact]
-        public async Task Test_Get_All_ProductTypes()
+        public async Task Test_Get_All_Orders()
         {
             using (var client = new APIClientProvider().Client)
             {
@@ -24,17 +24,17 @@ namespace TestBangazonAPI
                 /*
                     ACT
                 */
-                var response = await client.GetAsync("/api/productTypes");
+                var response = await client.GetAsync("/api/orders");
 
 
                 string responseBody = await response.Content.ReadAsStringAsync();
-                var productTypes = JsonConvert.DeserializeObject<List<Order>>(responseBody);
+                var orders = JsonConvert.DeserializeObject<List<Order>>(responseBody);
 
                 /*
                     ASSERT
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(productTypes.Count > 0);
+                Assert.True(orders.Count > 0);
             }
         }
     }

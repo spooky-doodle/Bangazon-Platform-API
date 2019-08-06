@@ -13,11 +13,11 @@ namespace BangazonAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class OrderController : Controller
+    public class OrdersController : Controller
     {
         private readonly IConfiguration _config;
 
-        public OrderController(IConfiguration config)
+        public OrdersController(IConfiguration config)
         {
             _config = config;
         }
@@ -40,13 +40,14 @@ namespace BangazonAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
+                    cmd.CommandText = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
                                         FROM [Order] o
-                                        LEFT JOIN OrderProduct op ON op.OrderId = o.Id
-                                        LEFT JOIN Product p ON p.Id = op.ProductId";
+                                        JOIN OrderProduct op ON op.OrderId = o.Id
+                                        JOIN Product p ON p.Id = op.ProductId";
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     List<Order> orders = new List<Order>();
+
                     while (reader.Read())
                     {
                         Order order = new Order
@@ -57,14 +58,28 @@ namespace BangazonAPI.Controllers
                             Products = new List<Product>()
                         };
 
-                        Product product = new Product
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
-                            ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
-
-                        };
-
                         orders.Add(order);
+
+                        //Product product = new Product
+                        //{
+                        //    Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                        //    ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                        //    CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
+                        //    Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                        //    Title = reader.GetString(reader.GetOrdinal("Title")),
+                        //    Description = reader.GetString(reader.GetOrdinal("Description")),                       
+                        //};
+
+                        //if (orders.Any(o => o.Id == order.Id))
+                        //{
+                        //    Order existingOrder = orders.Find(o => o.Id == order.Id);
+                        //    existingOrder.Products.Add(product);
+                        //}
+                        //else
+                        //{
+                        //    order.Products.Add(product);
+                        //    orders.Add(order);
+                        //}
                     }
 
                     reader.Close();
