@@ -178,7 +178,7 @@ namespace BangazonAPI.Controllers
             if (completed == "true") sqlCommandTxt += " WHERE PaymentTypeId != 0 AND o.Id = @id";
             else if (completed == "false") sqlCommandTxt += " WHERE PaymentTypeId IS NULL AND o.Id = @id";
             else sqlCommandTxt += " WHERE o.Id = @id";
-            
+
 
             using (SqlConnection conn = Connection)
             {
@@ -213,26 +213,23 @@ namespace BangazonAPI.Controllers
                             {
                                 // Don't do anything
                             }
+                            order.Products = new List<Product>();
                         }
 
-                        order.Products = new List<Product>();
-                        if (_include == "products")
+                        if (!reader.IsDBNull(reader.GetOrdinal("ProductId")))
                         {
-                            if (!reader.IsDBNull(reader.GetOrdinal("ProductId")))
-                            {
-                                order.Products.Add(
-                                    new Product
-                                    {
-                                        Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
-                                        ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
-                                        CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
-                                        Price = reader.GetDecimal(reader.GetOrdinal("Price")),
-                                        Title = reader.GetString(reader.GetOrdinal("Title")),
-                                        Description = reader.GetString(reader.GetOrdinal("Description")),
-                                        Quantity = reader.GetInt32(reader.GetOrdinal("Quantity"))
-                                    }
-                               );
-                            }
+                            order.Products.Add(
+                                new Product
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                                    ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                    CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
+                                    Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                    Title = reader.GetString(reader.GetOrdinal("Title")),
+                                    Description = reader.GetString(reader.GetOrdinal("Description")),
+                                    Quantity = reader.GetInt32(reader.GetOrdinal("Quantity"))
+                                }
+                           );
                         }
                         else if (_include == "customers")
                         {
