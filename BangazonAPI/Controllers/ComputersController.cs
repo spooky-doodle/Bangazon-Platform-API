@@ -12,6 +12,21 @@ using Microsoft.Extensions.Configuration;
 
 /*
 
+    Verbs to be supported
+
+    GET
+    POST
+    PUT
+    DELETE
+    User should be able to GET a list, and GET a single item.
+
+    Given A computer is assigned to an employee,
+    When a user attempts to delete the computer,
+    Then they should not be allowed to delete the computer.
+
+    A computer is considered to be assigned to an employee when there is a 
+    ComputerEmployee record with ComputerId matching the Computer's Id, 
+    that has a null UnassignDate.
 
 */
 
@@ -36,124 +51,88 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        // GET api/values
+        // GET api/computers
         [HttpGet]
-
-        public async Task<IActionResult> Get(
-            [FromQuery] string _include,
-            [FromQuery] string _filter = "",
-            [FromQuery] int _gt = 0
-            )
+        public async Task<IActionResult> Get()
         {
-            // Ensures "" or "employees"
-            _include = CheckInclude(_include);
-            // Ensures "" or "budget"
-            _filter = CheckFilter(_filter);
-
             using (SqlConnection conn = Connection)
             {
                 await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = MakeSqlGetCommand(_include);
-                    if (_filter == "budget")
-                    {
-                        cmd.CommandText += " WHERE Budget > @gt";
-
-                        cmd.Parameters.Add(new SqlParameter("@gt", _gt));
-                    }
-                    
+                    cmd.CommandText = MakeSqlGetCommand();
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                    List<Department> departments = new List<Department>();
+                    List<Computer> computers = new List<Computer>();
                     while (await reader.ReadAsync())
                     {
-                        int Id = reader.GetInt32(reader.GetOrdinal("Id"));
-                        int foundIndex = departments.FindIndex(dept => dept.Id == Id);
-                        Department department;
-                        if (foundIndex == -1)
-                        {
-                            department = CreateDepartment(reader);
-                            departments.Add(department);
-                        }
-                        else department = departments[foundIndex];
+                        Computer newComputer = CreateComputer(reader);
+                        computers.Add(newComputer);
 
-
-                        if (_include == "employees")
-                        {
-                            if (foundIndex == -1) department.Employees = new List<Employee>();
-                            var newEmployee = CreateEmployee(reader);
-                            if (newEmployee != null) department.Employees.Add(newEmployee);
-                        }
-                       
 
                     }
 
                     reader.Close();
 
-                    return Ok(departments);
+                    return Ok(computers);
                 }
             }
         }
 
 
-        // GET api/values/5
-        [HttpGet("{id}", Name = "GetDepartment")]
+        // GET api/computers/5
+        [HttpGet("{id}", Name = "GetComputer")]
         public async Task<IActionResult> Get(
-            [FromRoute] int id,
-         [FromQuery] string _include
+            [FromRoute] int id
          )
         {
-            // Ensures "" or "employees"
-            _include = CheckInclude(_include);
-
             using (SqlConnection conn = Connection)
             {
                 await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = MakeSqlGetCommand(_include);
-                    cmd.CommandText += " WHERE d.Id = @id";
+                    cmd.CommandText = MakeSqlGetCommand();
+                    cmd.CommandText += " WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
-                   
+
 
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                    Department department = null;
+                    Computer computer = null;
                     while (await reader.ReadAsync())
                     {
-                        if (department == null)
+                        if (computer == null)
                         {
-                            department = CreateDepartment(reader);
+                            computer = CreateComputer(reader);
                         }
 
 
-                        if (_include == "employees")
-                        {
-                            if (department.Employees == null) department.Employees = new List<Employee>();
-                            var newEmployee = CreateEmployee(reader);
-                            if (newEmployee != null) department.Employees.Add(newEmployee);
-                        }
+                        //if (_include == "employees")
+                        //{
+                        //    if (computer.Employees == null) computer.Employees = new List<Employee>();
+                        //    var newEmployee = CreateEmployee(reader);
+                        //    if (newEmployee != null) computer.Employees.Add(newEmployee);
+                        //}
 
 
                     }
 
                     reader.Close();
 
-                    if (department == null) return NotFound();
+                    if (computer == null) return NotFound();
 
-                    return Ok(department);
+                    return Ok(computer);
                 }
             }
         }
 
 
 
-        // POST api/values
+        // POST api/computers
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Department department)
+        public async Task<IActionResult> Post([FromBody] Computer computer)
         {
             using (SqlConnection conn = Connection)
             {
@@ -162,17 +141,19 @@ namespace BangazonAPI.Controllers
                 {
                     // More string interpolation
                     cmd.CommandText = @"
-                        INSERT INTO Department (Name, Budget)
+                        INSERT INTO Computer (Make, Manufacturer, PurchaseDate)
                         OUTPUT INSERTED.Id
-                        VALUES (@name, @budget)
+                        VALUES (@make, @manufacturer, @purchaseDate)
                     ";
-                    cmd.Parameters.Add(new SqlParameter("@name", department.Name));
-                    cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
+                    cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
+                    cmd.Parameters.Add(new SqlParameter("@manufacturer", computer.Manufacturer));
+                    cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
 
 
-                    department.Id = (int)await cmd.ExecuteScalarAsync();
 
-                    return CreatedAtRoute("GetDepartment", new { id = department.Id }, department);
+                    computer.Id = (int)await cmd.ExecuteScalarAsync();
+
+                    return CreatedAtRoute("GetDepartment", new { id = computer.Id }, computer);
                 }
             }
         }
@@ -181,7 +162,7 @@ namespace BangazonAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(
             [FromRoute] int id,
-            [FromBody] Department department
+            [FromBody] Computer computer
             )
         {
             try
@@ -192,14 +173,20 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                            UPDATE Department
-                            SET Name = @name,
-                                Budget = @budget
+                            UPDATE Computer
+                            SET Make = @make,
+                                Manufacturer = @manufacturer,
+                                DecommissionDate = @decommissionDate,
+                                PurchaseDate = @purchaseDate
                             WHERE Id = @id
                         ";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
-                        cmd.Parameters.Add(new SqlParameter("@name", department.Name));
-                        cmd.Parameters.Add(new SqlParameter("@budget", department.Budget));
+                        cmd.Parameters.Add(new SqlParameter("@make", computer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@manufacturer", computer.Manufacturer));
+                        cmd.Parameters.Add(new SqlParameter("@decommissionDate", computer.DecommissionDate));
+                        cmd.Parameters.Add(new SqlParameter("@purchaseDate", computer.PurchaseDate));
+
+
 
 
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
@@ -215,7 +202,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (await DepartmentExists(id) == false)
+                if (await ComputerExists(id) == false)
                 {
                     return NotFound();
                 }
@@ -226,102 +213,116 @@ namespace BangazonAPI.Controllers
             }
         }
 
-        // DELETE api/customers/5
-        //[HttpDelete("{id}")]
-        //public ActionResult Delete(/* int id */)
-        //{
-
-        //    return Forbid();
-        //    try
-        //    {
-
-        //        using (SqlConnection conn = Connection)
-        //        {
-        //            await conn.OpenAsync();
-        //            using (SqlCommand cmd = conn.CreateCommand())
-        //            {
-        //                cmd.CommandText = "DELETE FROM Customer WHERE Id = @id";
-        //                cmd.Parameters.Add(new SqlParameter("@id", id));
-        //                int rowsAffected = await cmd.ExecuteNonQueryAsync();
-        //                if (rowsAffected > 0)
-        //                {
-        //                    return new StatusCodeResult(StatusCodes.Status204NoContent);
-        //                }
-        //                throw new Exception("No rows affected");
-        //            }
-        //        }
-        //    }
-        //    catch (Exception)
-        //    {
-        //        if (await CustomerExists(id) == false)
-        //        {
-        //            return NotFound();
-        //        }
-        //        else
-        //        {
-        //            throw;
-        //        }
-        //    }
-        //}
-
-        static private string CheckInclude(string include)
+        // DELETE api/computers/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id )
         {
-            if (include == "employees") return include;
-            return "";
-        }
-        static private string CheckFilter(string filter)
-        {
-            if (filter == "budget") return filter;
-            return "";
-        }
 
-
-        private Department CreateDepartment(SqlDataReader reader)
-        {
-            return new Department()
-            {
-                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                Name = reader.GetString(reader.GetOrdinal("Name")),
-                Budget = reader.GetInt32(reader.GetOrdinal("Budget")),
-            };
-        }
-        static private Employee CreateEmployee(SqlDataReader reader)
-        {
             try
             {
-                return new Employee()
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
-                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                    IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
-                };
-            }
-            catch (SqlNullValueException)
-            {
-                return null;
-            }
 
+                using (SqlConnection conn = Connection)
+                {
+                    await conn.OpenAsync();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "DELETE FROM Computer WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        int rowsAffected = await cmd.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (await ComputerExists(id) == false)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
-        static private string MakeSqlGetCommand(string include)
+
+
+        static private Computer CreateComputer(SqlDataReader reader)
         {
-            var outputString = "SELECT d.Id, d.[Name], d.Budget";
-            var employeeFields = "e.FirstName, e.LastName, e.IsSupervisor, e.Id AS EmployeeId";
+            Computer newComputer = new Computer()
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                Make = reader.GetString(reader.GetOrdinal("Make")),
+                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer"))
+            };
 
-            if (include == "employees") outputString += $", {employeeFields}";
+            try
+            {
+                newComputer.DecommissionDate = reader.GetDateTime(reader.GetOrdinal("DecommissionDate"));
+            }
+            catch (SqlNullValueException)
+            { }  //  DecommissionDate defaults to null.
 
-            outputString += " FROM Department d";
-            if (include == "employees") outputString += " LEFT JOIN Employee e on d.Id = e.DepartmentId";
+            return newComputer;
+        }
 
 
+        //    I might want this later!!
 
+
+        //static private Employee CreateEmployee(SqlDataReader reader)
+        //{
+        //    try
+        //    {
+        //        return new Employee()
+        //        {
+        //            Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+        //            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+        //            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+        //            IsSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor"))
+        //        };
+        //    }
+        //    catch (SqlNullValueException)
+        //    {
+        //        return null;
+        //    }
+
+        //}
+
+        static private string MakeSqlGetCommand()
+        {
+            var outputString = "SELECT c.Id, c.Make, c.Manufacturer, c.PurchaseDate, c.DecommissionDate";
+            //var employeeFields = "e.FirstName, e.LastName, e.IsSupervisor, e.Id AS EmployeeId";
+
+            outputString += " FROM Computer c";
 
             return outputString;
         }
 
+        private async Task<bool> CheckActiveAssignment(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                await conn.OpenAsync();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT Id, UnassignDate FROM ComputerEmployee " +
+                        "WHERE ComputerId = @id AND UnassignDate IS NULL";
+                    SqlDataReader reader = cmd.ExecuteReader();
 
-        private async Task<bool> DepartmentExists(int id)
+                    return await reader.ReadAsync();
+                }
+            }
+        }
+
+
+        private async Task<bool> ComputerExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -329,7 +330,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     // More string interpolation
-                    cmd.CommandText = "SELECT Id FROM Department WHERE Id = @id";
+                    cmd.CommandText = "SELECT Id FROM Computer WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
