@@ -175,8 +175,8 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.Equal(1, order.Id);
-                Assert.Equal(4, order.CustomerId);
-                Assert.Equal(2, order.PaymentTypeId);
+                Assert.Equal(2, order.CustomerId);
+                Assert.Equal(1, order.PaymentTypeId);
                 Assert.NotNull(order);
 
 
@@ -207,8 +207,8 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.Equal(1, order.Id);
-                Assert.Equal(4, order.CustomerId);
-                Assert.Equal(2, order.PaymentTypeId);
+                Assert.Equal(2, order.CustomerId);
+                Assert.Equal(1, order.PaymentTypeId);
                 Assert.True(order.Products.Count > 0);
                 Assert.NotNull(order);
             }
@@ -238,8 +238,8 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.Equal(1, order.Id);
-                Assert.Equal(4, order.CustomerId);
-                Assert.Equal(2, order.PaymentTypeId);
+                Assert.Equal(2, order.CustomerId);
+                Assert.Equal(1, order.PaymentTypeId);
                 Assert.NotNull(order.Customer);
                 Assert.NotNull(order);
             }
@@ -313,7 +313,7 @@ namespace TestBangazonAPI
                 var modifiedOrderAsJSON = JsonConvert.SerializeObject(modifiedOrder);
 
                 var response = await client.PutAsync(
-                    "/api/orders/1",
+                    "/api/orders/2",
                     new StringContent(modifiedOrderAsJSON, Encoding.UTF8, "application/json")
                 );
                 string responseBody = await response.Content.ReadAsStringAsync();
@@ -323,7 +323,7 @@ namespace TestBangazonAPI
                 /*
                    GET section
                 */
-                var getOrder = await client.GetAsync("/api/orders/1");
+                var getOrder = await client.GetAsync("/api/orders/2");
                 getOrder.EnsureSuccessStatusCode();
 
                 string getOrderBody = await getOrder.Content.ReadAsStringAsync();

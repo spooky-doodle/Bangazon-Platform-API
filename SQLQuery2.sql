@@ -1,2 +1,1 @@
-﻿
-SELECT * FROM [Order]
+﻿SELECT * FROM [Order]
