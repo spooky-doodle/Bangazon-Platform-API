@@ -31,7 +31,7 @@ CREATE TABLE Employee (
 CREATE TABLE Computer (
 	Id INTEGER NOT NULL PRIMARY KEY IDENTITY,
 	PurchaseDate DATETIME NOT NULL,
-	DecomissionDate DATETIME,
+	DecommissionDate DATETIME,
 	Make VARCHAR(55) NOT NULL,
 	Manufacturer VARCHAR(55) NOT NULL
 );

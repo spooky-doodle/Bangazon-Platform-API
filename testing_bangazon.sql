@@ -43,7 +43,7 @@ CREATE TABLE Employee (
 CREATE TABLE Computer (
 	Id INTEGER NOT NULL PRIMARY KEY IDENTITY,
 	PurchaseDate DATETIME NOT NULL,
-	DecomissionDate DATETIME,
+	DecommissionDate DATETIME,
 	Make VARCHAR(55) NOT NULL,
 	Manufacturer VARCHAR(55) NOT NULL
 );
@@ -137,7 +137,7 @@ INSERT INTO Employee (FirstName, LastName, DepartmentId, IsSuperVisor) VALUES ('
 -- Computer Data
 INSERT INTO Computer (PurchaseDate, Make, Manufacturer) VALUES ('1/11/2017', 'GFE-744', 'Zoombeat');
 INSERT INTO Computer (PurchaseDate, Make, Manufacturer) VALUES ('8/11/2015', 'YRV-483', 'Oyondu');
-INSERT INTO Computer (PurchaseDate, DecomissionDate, Make, Manufacturer) VALUES ('10/30/2013', '6/22/2015', 'LBP-375', 'Eazzy');
+INSERT INTO Computer (PurchaseDate, DecommissionDate, Make, Manufacturer) VALUES ('10/30/2013', '6/22/2015', 'LBP-375', 'Eazzy');
 INSERT INTO Computer (PurchaseDate, Make, Manufacturer) VALUES ('12/26/2015', 'LSU-940', 'Aibox');
 INSERT INTO Computer (PurchaseDate, Make, Manufacturer) VALUES ('1/14/2019', 'MMA-189', 'Avamba');
 INSERT INTO Computer (PurchaseDate, Make, Manufacturer) VALUES ('3/19/2018', 'BSC-907', 'Realbuzz');
