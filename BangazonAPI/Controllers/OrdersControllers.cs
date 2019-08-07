@@ -166,37 +166,19 @@ namespace BangazonAPI.Controllers
                 return new StatusCodeResult(StatusCodes.Status404NotFound);
             }
 
-            if (_include == "products")
-            {
-                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title
-                                        FROM [Order] o
-                                        LEFT JOIN OrderProduct op ON op.OrderId = o.Id
-                                        LEFT JOIN Product p ON p.Id = op.ProductId";
-            }
-            else if (_include == "customers")
-            {
-                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId, 
-                                        c.Id AS CId, c.FirstName, c.LastName
-                                        FROM [Order] o
-                                        LEFT JOIN Customer c ON c.Id = o.CustomerId";
-            }
-            else if (completed == "true")
-            {
-                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId
-                    FROM[Order] o
-                    WHERE PaymentTypeId != 0";
-            }
-            else if (completed == "false")
-            {
-                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId
-                    FROM[Order] o
-                    WHERE PaymentTypeId IS NULL";
-            }
-            else
-            {
-                sqlCommandTxt = @"SELECT o.Id, o.CustomerId, o.PaymentTypeId
-                                         FROM [Order] o";
-            }
+            sqlCommandTxt = @"SELECT 
+                                    o.Id, o.CustomerId, o.PaymentTypeId, 
+                                    p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title ";
+            if (_include == "customers") sqlCommandTxt += ", c.Id AS CId, c.FirstName, c.LastName ";
+            sqlCommandTxt += @" FROM [Order] o 
+                                 LEFT JOIN OrderProduct op ON op.OrderId = o.Id
+                                 LEFT JOIN Product p ON p.Id = op.ProductId";
+            if (_include == "customers") sqlCommandTxt += " LEFT JOIN Customer c ON c.Id = o.CustomerId";
+
+            if (completed == "true") sqlCommandTxt += " WHERE PaymentTypeId != 0 AND o.Id = @id";
+            else if (completed == "false") sqlCommandTxt += " WHERE PaymentTypeId IS NULL AND o.Id = @id";
+            else sqlCommandTxt += " WHERE o.Id = @id";
+
 
             using (SqlConnection conn = Connection)
             {
@@ -204,7 +186,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
 
-                    cmd.CommandText = $"{sqlCommandTxt} WHERE o.Id = @id";
+                    cmd.CommandText = sqlCommandTxt;
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
@@ -231,28 +213,25 @@ namespace BangazonAPI.Controllers
                             {
                                 // Don't do anything
                             }
+                            order.Products = new List<Product>();
                         }
 
-                        order.Products = new List<Product>();
-                        if (_include == "products")
+                        if (!reader.IsDBNull(reader.GetOrdinal("ProductId")))
                         {
-                            if (!reader.IsDBNull(reader.GetOrdinal("ProductId")))
-                            {
-                                order.Products.Add(
-                                    new Product
-                                    {
-                                        Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
-                                        ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
-                                        CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
-                                        Price = reader.GetDecimal(reader.GetOrdinal("Price")),
-                                        Title = reader.GetString(reader.GetOrdinal("Title")),
-                                        Description = reader.GetString(reader.GetOrdinal("Description")),
-                                        Quantity = reader.GetInt32(reader.GetOrdinal("Quantity"))
-                                    }
-                               );
-                            }
+                            order.Products.Add(
+                                new Product
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("ProductId")),
+                                    ProductTypeId = reader.GetInt32(reader.GetOrdinal("ProductTypeId")),
+                                    CustomerId = reader.GetInt32(reader.GetOrdinal("PCId")),
+                                    Price = reader.GetDecimal(reader.GetOrdinal("Price")),
+                                    Title = reader.GetString(reader.GetOrdinal("Title")),
+                                    Description = reader.GetString(reader.GetOrdinal("Description")),
+                                    Quantity = reader.GetInt32(reader.GetOrdinal("Quantity"))
+                                }
+                           );
                         }
-                        else if (_include == "customers")
+                        if (_include == "customers")
                         {
                             if (!reader.IsDBNull(reader.GetOrdinal("CId")))
                             {
