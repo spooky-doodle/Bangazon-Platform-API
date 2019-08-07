@@ -9,10 +9,13 @@ namespace BangazonAPI.Models
     public class Computer
     {
         public int Id { get; set; }
-        public DateTime PurchaseDate { get; set; }
-        public DateTime? DecommissionDate { get; set; }
         [Required]
+        public DateTime PurchaseDate { get; set; }
 
+
+        public DateTime? DecommissionDate { get; set; } = null;
+
+        [Required]
         public string Make { get; set; }
         [Required]
 
