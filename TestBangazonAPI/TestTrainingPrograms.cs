@@ -30,13 +30,13 @@ namespace TestBangazonAPI
 
 
                 string responseBody = await response.Content.ReadAsStringAsync();
-                var products = JsonConvert.DeserializeObject<List<Product>>(responseBody);
+                var trainingPrograms = JsonConvert.DeserializeObject<List<TrainingProgram>>(responseBody);
 
                 /*
                     ASSERT
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.True(products.Count > 0);
+                Assert.True(trainingPrograms.Count > 0);
             }
         }
 
@@ -53,7 +53,7 @@ namespace TestBangazonAPI
                 /*
                     ACT
                 */
-                var response = await client.GetAsync("/api/trainingPrograms/1");
+                var response = await client.GetAsync("/api/trainingPrograms/2");
 
 
                 string responseBody = await response.Content.ReadAsStringAsync();
@@ -64,7 +64,7 @@ namespace TestBangazonAPI
                 */
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.True(trainingProgram.Name != null);
-                Assert.True(trainingProgram.Id == 1);
+                Assert.True(trainingProgram.Id == 2);
             }
         }
         [Fact]
@@ -112,7 +112,7 @@ namespace TestBangazonAPI
         [Fact]
         public async Task Test_Update_Existing_Training_Program()
         {
-            int testId = 1;
+            int testId = 3;
             using (var client = new APIClientProvider().Client)
             {
                 /*
@@ -133,7 +133,7 @@ namespace TestBangazonAPI
                     ACT
                 */
                 var response = await client.PutAsync(
-                    $"/api/trainingProgram/{testId}",
+                    $"/api/trainingPrograms/{testId}",
                     new StringContent(jsonTrainingPrgram, Encoding.UTF8, "application/json")
                     );
 
@@ -224,7 +224,7 @@ namespace TestBangazonAPI
 
 
                 var response = await client.PostAsync(
-                    "/api/products",
+                    "/api/trainingPrograms",
                     new StringContent(jsonTrainingProgram, Encoding.UTF8, "application/json")
                     );
 
@@ -260,7 +260,7 @@ namespace TestBangazonAPI
                 /*
                     ACT
                 */
-                var deleteResponse = await client.DeleteAsync($"/api/trainingPrograms/1");
+                var deleteResponse = await client.DeleteAsync($"/api/trainingPrograms/2");
 
 
                 /*
@@ -272,7 +272,7 @@ namespace TestBangazonAPI
 
 
         [Fact]
-        public async Task Test_Delete_Nonexisting_Product()
+        public async Task Test_Delete_Nonexisting_Training_Programs()
         {
 
 

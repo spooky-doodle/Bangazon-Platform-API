@@ -51,7 +51,7 @@ namespace BangazonAPI.Controllers
                             Name = reader.GetString(reader.GetOrdinal("NAme")),
                             StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
                             EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
-                            MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))                          
+                            MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))
                         };
 
                         trainingPrograms.Add(trainingProgram);
@@ -65,7 +65,7 @@ namespace BangazonAPI.Controllers
         }
 
         // GET api/values/5
-        [HttpGet("{id}", Name = "GetProduct")]
+        [HttpGet("{id}", Name = "GetTrainingProgram")]
         public async Task<IActionResult> Get([FromRoute]int id)
         {
             using (SqlConnection conn = Connection)
@@ -75,7 +75,7 @@ namespace BangazonAPI.Controllers
                 {
                     cmd.CommandText = @"SELECT Id, [Name], StartDate, EndDate, MaxAttendees 
                                         FROM TrainingProgram 
-                                        WHERE p.Id = @id";
+                                        WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
@@ -95,14 +95,14 @@ namespace BangazonAPI.Controllers
 
                     reader.Close();
 
-                    return Ok(product);
+                    return Ok(trainingProgram);
                 }
             }
         }
 
         // POST api/values
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Product product)
+        public async Task<IActionResult> Post([FromBody] TrainingProgram trainingProgram)
         {
             using (SqlConnection conn = Connection)
             {
@@ -111,27 +111,25 @@ namespace BangazonAPI.Controllers
                 {
                     // More string interpolation
                     cmd.CommandText = @"
-                        INSERT INTO Product (ProductTypeId, CustomerId, Title, Description, Quantity, Price)
+                        INSERT INTO TrainingProgram (Name, StartDate, EndDate, MaxAttendees)
                         OUTPUT INSERTED.Id
-                        VALUES (@ProductTypeId, @CustomerId, @Title, @Description, @Quantity, @Price)
+                        VALUES (@Name, @StartDate, @EndDate, @MaxAttendees)
                     ";
-                    cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
-                    cmd.Parameters.Add(new SqlParameter("@CustomerId", product.CustomerId));
-                    cmd.Parameters.Add(new SqlParameter("@Title", product.Title));
-                    cmd.Parameters.Add(new SqlParameter("@Description", product.Description));
-                    cmd.Parameters.Add(new SqlParameter("@Quantity", product.Quantity));
-                    cmd.Parameters.Add(new SqlParameter("@Price", product.Price));
+                    cmd.Parameters.Add(new SqlParameter("@Name", trainingProgram.Name));
+                    cmd.Parameters.Add(new SqlParameter("@StartDate", trainingProgram.StartDate));
+                    cmd.Parameters.Add(new SqlParameter("@EndDate", trainingProgram.EndDate));
+                    cmd.Parameters.Add(new SqlParameter("@MaxAttendees", trainingProgram.MaxAttendees));
 
-                    product.Id = (int)await cmd.ExecuteScalarAsync();
+                    trainingProgram.Id = (int)await cmd.ExecuteScalarAsync();
 
-                    return CreatedAtRoute("GetProduct", new { id = product.Id }, product);
+                    return CreatedAtRoute("GetTrainingProgram", new { id = trainingProgram.Id }, trainingProgram);
                 }
             }
         }
 
         // PUT api/values/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute]int id, [FromBody] Product product)
+        public async Task<IActionResult> Put([FromRoute]int id, [FromBody] TrainingProgram trainingProgram)
         {
             try
             {
@@ -141,22 +139,18 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                            UPDATE Product
-                            SET ProductTypeId = @ProductTypeId,
-                                CustomerId = @CustomerId,
-                                Title = @Title,
-                                Description = @Description,
-                                Quantity = @Quantity,
-                                Price = @Price       
+                            UPDATE TrainingProgram
+                            SET [Name] = @Name,
+                                StartDate = @StartDate,
+                                EndDate = @EndDate,
+                                MaxAttendees = @MaxAttendees      
                             WHERE Id = @id
                         ";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
-                        cmd.Parameters.Add(new SqlParameter("@ProductTypeId", product.ProductTypeId));
-                        cmd.Parameters.Add(new SqlParameter("@CustomerId", product.CustomerId));
-                        cmd.Parameters.Add(new SqlParameter("@Title", product.Title));
-                        cmd.Parameters.Add(new SqlParameter("@Description", product.Description));
-                        cmd.Parameters.Add(new SqlParameter("@Quantity", product.Quantity));
-                        cmd.Parameters.Add(new SqlParameter("@Price", product.Price));
+                        cmd.Parameters.Add(new SqlParameter("@Name", trainingProgram.Name));
+                        cmd.Parameters.Add(new SqlParameter("@StartDate", trainingProgram.StartDate));
+                        cmd.Parameters.Add(new SqlParameter("@EndDate", trainingProgram.EndDate));
+                        cmd.Parameters.Add(new SqlParameter("@MaxAttendees", trainingProgram.MaxAttendees));
 
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
 
@@ -171,7 +165,7 @@ namespace BangazonAPI.Controllers
             }
             catch (Exception)
             {
-                if (!ProductExists(id))
+                if (!TrainingProgramExists(id))
                 {
                     return NotFound();
                 }
@@ -186,6 +180,8 @@ namespace BangazonAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute]int id)
         {
+
+
             try
             {
                 using (SqlConnection conn = Connection)
@@ -193,21 +189,60 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "DELETE FROM Product WHERE Id = @id";
+                        cmd.CommandText = @"SELECT Id, [Name], StartDate, EndDate, MaxAttendees 
+                                        FROM TrainingProgram 
+                                        WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
+                        SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        if (rowsAffected > 0)
+                        TrainingProgram trainingProgram = null;
+                        if (reader.Read())
                         {
-                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                            trainingProgram = new TrainingProgram
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Name = reader.GetString(reader.GetOrdinal("NAme")),
+                                StartDate = reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                                EndDate = reader.GetDateTime(reader.GetOrdinal("EndDate")),
+                                MaxAttendees = reader.GetInt32(reader.GetOrdinal("MaxAttendees"))
+                                // You might have more columns
+                            };
                         }
-                        throw new Exception("No rows affected");
+
+                        reader.Close();
+
+                        if (trainingProgram.StartDate > DateTime.Now)
+                        {
+                            using (SqlConnection conn2 = Connection)
+                            {
+                                conn2.Open();
+                                using (SqlCommand cmd2 = conn2.CreateCommand())
+                                {
+                                    cmd2.CommandText = @"DELETE FROM EmployeeTraining 
+                                                         DELETE FROM TrainingProgram
+                                                          WHERE Id = @id";
+                                    cmd2.Parameters.Add(new SqlParameter("@id", id));
+
+                                    int rowsAffected = cmd2.ExecuteNonQuery();
+                                    if (rowsAffected > 0)
+                                    {
+                                        return new StatusCodeResult(StatusCodes.Status204NoContent);
+                                    }
+                                    throw new Exception("No rows affected");
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            return StatusCode(403);
+                        }
                     }
                 }
             }
             catch (Exception)
             {
-                if (!ProductExists(id))
+                if (!TrainingProgramExists(id))
                 {
                     return NotFound();
                 }
@@ -215,10 +250,13 @@ namespace BangazonAPI.Controllers
                 {
                     throw;
                 }
+
             }
         }
 
-        private bool ProductExists(int id)
+
+
+        private bool TrainingProgramExists(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -226,7 +264,7 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     // More string interpolation
-                    cmd.CommandText = "SELECT Id FROM Product WHERE Id = @id";
+                    cmd.CommandText = "SELECT Id FROM TrainingProgram WHERE Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
 
                     SqlDataReader reader = cmd.ExecuteReader();
