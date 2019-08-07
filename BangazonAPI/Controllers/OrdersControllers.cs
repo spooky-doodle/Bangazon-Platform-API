@@ -311,7 +311,7 @@ namespace BangazonAPI.Controllers
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
-                            UPDATE Order
+                            UPDATE [Order]
                             SET CustomerId = @customerId, 
                                 PaymentTypeId = @paymentTypeId
                             WHERE Id = @id
@@ -355,7 +355,7 @@ namespace BangazonAPI.Controllers
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = @"DELETE FROM Order WHERE Id = @id";
+                        cmd.CommandText = @"DELETE FROM [Order] WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
