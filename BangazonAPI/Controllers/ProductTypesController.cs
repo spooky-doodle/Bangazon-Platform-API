@@ -66,7 +66,7 @@ namespace BangazonAPI.Controllers
 
         // GET api/<controller>/5
         [HttpGet("{id}", Name = "GetProductType")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -122,7 +122,7 @@ namespace BangazonAPI.Controllers
 
         // PUT api/<controller>/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] ProductType productType)
+        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] ProductType productType)
         {
             try
             {
