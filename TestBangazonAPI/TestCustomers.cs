@@ -37,6 +37,56 @@ namespace TestBangazonAPI
             Assert.True(customers.Count > 0);
         }
 
+        [Fact]
+        public async Task Test_Get_All_Inactive_Customers()
+        {
+
+            /*
+                ARRANGE
+            */
+
+            // Magic number...
+            int customerWithOrderId = 2;
+            Customer newCustomer = new Customer()
+            {
+                FirstName = "Bob",
+                LastName = "Mendez"
+            };
+
+            var newCustomerResponse = await PostCustomer(newCustomer);
+            var parsedCustomer = await ParseOneCustomer(newCustomerResponse);
+
+            /*
+                ACT
+            */
+
+            // Fetch()
+
+            var getAllResponse = await GetResponse("/api/customers");
+            var allCustomers = await ParseCustomerList(getAllResponse);
+
+            var filteredResponse = await GetResponse("/api/customers?active=false");
+            // Json.Parse()
+            var filteredCustomers = await ParseCustomerList(filteredResponse);
+
+            var findNewCustomer = filteredCustomers.Find(cust => cust.Id == parsedCustomer.Id);
+            var customerWithOrder = filteredCustomers.Find(cust => cust.Id == customerWithOrderId);
+
+
+            /*
+                ASSERT
+            */
+            Assert.True(filteredCustomers.Count < allCustomers.Count);
+            Assert.Equal(HttpStatusCode.Created, newCustomerResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, filteredResponse.StatusCode);
+            Assert.True(filteredCustomers.Count > 0);
+            Assert.Null(customerWithOrder);
+
+            Assert.Equal(findNewCustomer.FirstName, newCustomer.FirstName);
+        }
+
+
+
 
         [Fact]
         public async Task Test_Get_Customers_Matching_Query()
