@@ -51,7 +51,8 @@ namespace TestBangazonAPI
             var newComputerResponse = await PostComputer(new Computer()
             {
                 Make = "Computer",
-                Manufacturer = "Apple"
+                Manufacturer = "Apple",
+                PurchaseDate = DateTime.Now
             });
             var newComputer = await ParseOneComputer(newComputerResponse);
 
@@ -107,7 +108,8 @@ namespace TestBangazonAPI
             var computerToAdd = new Computer()
             {
                 Make = "Bawglk",
-                Manufacturer = "Adgasg"
+                Manufacturer = "Adgasg",
+                PurchaseDate = DateTime.Now
             };
 
 
@@ -142,7 +144,8 @@ namespace TestBangazonAPI
             var computerToAdd = new Computer()
             {
                 Make = "asdfasdf",
-                Manufacturer = "aswqtw"
+                Manufacturer = "aswqtw",
+                PurchaseDate = DateTime.Now
             };
             var newComputerResponse = await PostComputer(computerToAdd);
             var newComputer = await ParseOneComputer(newComputerResponse);
@@ -150,7 +153,9 @@ namespace TestBangazonAPI
             var computerUpdates = new Computer()
             {
                 Make = "sbwerer",
-                Manufacturer = "rgwetdk"
+                Manufacturer = "rgwetdk",
+                PurchaseDate = DateTime.Now,
+                DecommissionDate = DateTime.Now
             };
 
             /*
@@ -177,8 +182,9 @@ namespace TestBangazonAPI
 
             Assert.Equal(HttpStatusCode.OK, updatedComputerResponse.StatusCode);
             Assert.Equal(newComputer.Id, updatedComputer.Id);
-            Assert.Equal(newComputer.Make, updatedComputer.Make);
-            Assert.Equal(newComputer.Manufacturer, updatedComputer.Manufacturer);
+            Assert.Equal(computerUpdates.Make, updatedComputer.Make);
+            Assert.Equal(computerUpdates.Manufacturer, updatedComputer.Manufacturer);
+            Assert.NotNull(updatedComputer.DecommissionDate);
 
 
 
@@ -193,7 +199,8 @@ namespace TestBangazonAPI
             var computerToAdd = new Computer()
             {
                 Make = "asdfasdf",
-                Manufacturer = "aswqtw"
+                Manufacturer = "aswqtw",
+                PurchaseDate = DateTime.Now
             };
 
             /*
