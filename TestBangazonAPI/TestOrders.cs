@@ -111,7 +111,7 @@ namespace TestBangazonAPI
                 /*
                     ACT
                 */
-                var deleteResponse = await client.DeleteAsync($"/api/productTypes/{NewLaser.Id}");
+                var deleteResponse = await client.DeleteAsync($"/api/productTypes/{NewOrder.Id}");
 
                 /*
                     ASSERT
