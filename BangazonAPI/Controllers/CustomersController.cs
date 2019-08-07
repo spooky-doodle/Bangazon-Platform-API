@@ -35,8 +35,9 @@ namespace BangazonAPI.Controllers
         [HttpGet]
 
         public async Task<IActionResult> Get(
-            [FromQuery] string _include, 
-            [FromQuery] string q = ""
+            [FromQuery] string _include,
+            [FromQuery] string q = "",
+            [FromQuery] bool? active = null
             )
         {
             // Ensures "", "products", or "payments"
@@ -48,9 +49,16 @@ namespace BangazonAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = MakeSqlGetCommand(_include);
-                    cmd.CommandText += " WHERE FirstName LIKE '%' + @q + '%'" +
-                        " OR LastName LIKE '%' + @q + '%'";
+
+                    cmd.CommandText += " WHERE (FirstName LIKE '%' + @q + '%'" +
+                        " OR LastName LIKE '%' + @q + '%')";
                     cmd.Parameters.Add(new SqlParameter("@q", q));
+                    if (active == false)
+                    {
+                        cmd.CommandText += " AND NOT EXISTS (SELECT NULL FROM [Order] o " +
+                            "WHERE o.CustomerId = c.Id AND o.PaymentTypeId IS NOT NULL)";
+
+                    }
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
@@ -293,7 +301,7 @@ namespace BangazonAPI.Controllers
             {
                 return null;
             }
-            
+
         }
 
         static private string MakeSqlGetCommand(string include)
@@ -331,7 +339,7 @@ namespace BangazonAPI.Controllers
             {
                 return null;
             }
-            
+
 
         }
         private async Task<bool> CustomerExists(int id)
