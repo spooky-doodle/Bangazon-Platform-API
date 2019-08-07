@@ -169,7 +169,7 @@ namespace BangazonAPI.Controllers
             sqlCommandTxt = @"SELECT 
                                     o.Id, o.CustomerId, o.PaymentTypeId, 
                                     p.CustomerId AS PCId, p.[Description], p.Id AS ProductId, p.Price, p.ProductTypeId, p.Quantity, p.Title ";
-            if (_include == "customers") sqlCommandTxt += "c.Id AS CId, c.FirstName, c.LastName ";
+            if (_include == "customers") sqlCommandTxt += ", c.Id AS CId, c.FirstName, c.LastName ";
             sqlCommandTxt += @" FROM [Order] o 
                                  LEFT JOIN OrderProduct op ON op.OrderId = o.Id
                                  LEFT JOIN Product p ON p.Id = op.ProductId";
@@ -231,7 +231,7 @@ namespace BangazonAPI.Controllers
                                 }
                            );
                         }
-                        else if (_include == "customers")
+                        if (_include == "customers")
                         {
                             if (!reader.IsDBNull(reader.GetOrdinal("CId")))
                             {
