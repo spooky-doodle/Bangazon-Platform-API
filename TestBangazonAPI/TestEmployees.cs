@@ -105,5 +105,54 @@ namespace TestBangazonAPI
             }
         }
 
+        [Fact]
+        public async Task Test_Update_Existing_Employee()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                 * ARRANGE
+                 */
+                var testNum = 1;
+
+                var testEmployee = new Employee()
+                {
+                    FirstName = "Dwight",
+                    LastName = "Schrute",
+                    DepartmentId = 3,
+                    IsSupervisor = true
+                };
+                var jsonTestEmployee = JsonConvert.SerializeObject(testEmployee);
+
+                /*
+                    ACT
+                */
+                var response = await client.PutAsync(
+                    $"/api/Employees/{testNum}",
+                    new StringContent(jsonTestEmployee, Encoding.UTF8, "application/json")
+                    );
+
+                /*
+                    ASSERT
+                */
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+                /*   
+                 *   GET   
+                */
+
+                var getEmployee = await client.GetAsync($"/api/Employees/{testNum}");
+                getEmployee.EnsureSuccessStatusCode();
+
+                string getResponse = await getEmployee.Content.ReadAsStringAsync();
+                Employee updatedEmployee = JsonConvert.DeserializeObject<Employee>(getResponse);
+
+                Assert.Equal(HttpStatusCode.OK, getEmployee.StatusCode);
+                Assert.Equal(testNum, updatedEmployee.Id);
+                Assert.Equal(testEmployee.FirstName, updatedEmployee.FirstName);
+                Assert.Equal(testEmployee.DepartmentId, updatedEmployee.DepartmentId);
+            }
+        }
+
     }
 }
