@@ -248,6 +248,37 @@ namespace TestBangazonAPI
 
         }
 
+        [Fact]
+        public async Task Test_Try_Delete_Assigned_Computer()
+        {
+
+
+            /*
+                ARRANGE
+            */
+
+            //  Test database has an open assignment for Computer ID 1.
+
+            /*
+                ACT
+            */
+            var deleteResponse = await DeleteComputer(1);
+
+
+            /*
+                ASSERT
+            */
+            Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+
+
+
+
+
+
+        }
+
+
+
 
 
 

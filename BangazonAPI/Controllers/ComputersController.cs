@@ -217,6 +217,7 @@ namespace BangazonAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id )
         {
+            if (await CheckActiveAssignment(id)) return NotFound();
 
             try
             {
@@ -312,8 +313,9 @@ namespace BangazonAPI.Controllers
                 await conn.OpenAsync();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT Id, UnassignDate FROM ComputerEmployee " +
+                    cmd.CommandText = "SELECT Id, ComputerId, UnassignDate FROM ComputerEmployee " +
                         "WHERE ComputerId = @id AND UnassignDate IS NULL";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     return await reader.ReadAsync();
