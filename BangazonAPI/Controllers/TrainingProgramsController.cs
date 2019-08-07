@@ -219,8 +219,10 @@ namespace BangazonAPI.Controllers
                                 using (SqlCommand cmd2 = conn2.CreateCommand())
                                 {
                                     cmd2.CommandText = @"DELETE FROM EmployeeTraining 
+                                                         WHERE TrainingProgramId = @id
                                                          DELETE FROM TrainingProgram
-                                                          WHERE Id = @id";
+                                                         WHERE Id = @id
+                                                          ";
                                     cmd2.Parameters.Add(new SqlParameter("@id", id));
 
                                     int rowsAffected = cmd2.ExecuteNonQuery();
