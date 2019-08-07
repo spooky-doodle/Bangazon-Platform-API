@@ -67,5 +67,43 @@ namespace TestBangazonAPI
             }
         }
 
+        [Fact]
+        public async Task Test_Add_Employee()
+        {
+            using (var client = new APIClientProvider().Client)
+            {
+                /*
+                 * ARRANGE
+                 */
+                var newEmployee = new Employee()
+                {
+                    FirstName = "Michael",
+                    LastName = "Scott",
+                    DepartmentId = 3,
+                    IsSupervisor = false
+                };
+                var jsonNewEmployee = JsonConvert.SerializeObject(newEmployee);
+
+                /*
+                * ACT
+                */
+                var response = await client.PostAsync("/api/Employees",
+                    new StringContent(jsonNewEmployee,
+                    Encoding.UTF8, "application/json"));
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var employee = JsonConvert.DeserializeObject<Employee>(responseBody);
+
+                /*
+                * ASSERT
+                */
+                Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+                Assert.True(employee.Id != 0);
+                Assert.Equal(newEmployee.FirstName, employee.FirstName);
+                Assert.Equal(newEmployee.DepartmentId, newEmployee.DepartmentId);
+                Assert.Equal(newEmployee.IsSupervisor, newEmployee.IsSupervisor);
+            }
+        }
+
     }
 }

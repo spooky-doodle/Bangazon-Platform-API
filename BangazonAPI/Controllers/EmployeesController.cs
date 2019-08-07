@@ -52,7 +52,7 @@ namespace BangazonAPI.Controllers
                                         c.Make, 
                                         c.Manufacturer, 
                                         c.PurchaseDate, 
-                                        c.DecomissionDate
+                                        c.DecommissionDate
                                         FROM Employee e
                                         JOIN Department d
                                         ON e.DepartmentId = d.Id
@@ -154,7 +154,7 @@ namespace BangazonAPI.Controllers
                                         c.Make, 
                                         c.Manufacturer, 
                                         c.PurchaseDate, 
-                                        c.DecomissionDate
+                                        c.DecommissionDate
                                         FROM Employee e
                                         JOIN Department d
                                         ON e.DepartmentId = d.Id
