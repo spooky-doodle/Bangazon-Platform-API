@@ -35,9 +35,11 @@ namespace BangazonAPI
                 builder =>
                 {
                     builder.WithOrigins("http://bangazon.com",
-                                        "http://localhost:3000");
-                });
+                                        "http://localhost:3000")
+                            .AllowAnyHeader();
+                });       
             });
+           
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
