@@ -54,11 +54,11 @@ namespace BangazonAPI.Controllers
                                         c.PurchaseDate, 
                                         c.DecommissionDate
                                         FROM Employee e
-                                        JOIN Department d
+                                        LEFT JOIN Department d
                                         ON e.DepartmentId = d.Id
-                                        JOIN ComputerEmployee ce
+                                        LEFT JOIN ComputerEmployee ce
                                         ON e.Id = ce.EmployeeId
-                                        JOIN Computer c
+                                        LEFT JOIN Computer c
                                         ON ce.ComputerId = c.Id
                                         ORDER BY e.Id
                                       ";
